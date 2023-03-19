@@ -1,2 +1,2 @@
 # Flow
-A statically typed, compiled procedural language.
+A statically typed, compiled procedural programming language.
