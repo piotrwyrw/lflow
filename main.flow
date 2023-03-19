@@ -1,0 +1,6 @@
+main: int () {
+    a: int <- 123;
+    b: int <- 23;
+    c: int <- a + b;
+    return c;
+}
