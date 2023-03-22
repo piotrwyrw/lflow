@@ -52,4 +52,6 @@ typedef struct {
 Token *Token_Create(char *, TokenType);
 void Token_Destroy(Token *);
 
+Token *Token_Dup(Token *);
+
 #endif

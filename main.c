@@ -3,6 +3,7 @@
 
 #include "src/include/tokenizer.h"
 #include "src/include/io.h"
+#include "src/include/parse.h"
 
 int main(void) {
     char *str = read_file("main.flow");
@@ -17,13 +18,11 @@ int main(void) {
 
     Tokenizer *tokenizer = Tokenizer_Create(primed);
 
-    while (Tokenizer_HasNext(tokenizer)) {
-        if (!Tokenizer_Next(tokenizer))
-            break;
-        printf("[%s] %s\n", TokenType_String(tokenizer->current->type), tokenizer->current->value);
-    }
+    Parser *parser = Parser_CreateParser(tokenizer);
 
-    Tokenizer_Destroy(tokenizer);
+    Parser_ParseStringLiteral(parser);
+
+    Parser_DestroyParser(parser);
 
     free(primed);
 

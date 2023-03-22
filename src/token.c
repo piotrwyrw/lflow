@@ -93,3 +93,7 @@ TokenType TokenType_Leading(char c) {
 }
 
 #undef BIND
+
+Token *Token_Dup(Token *token) {
+    return Token_Create(token->value, token->type);
+}
