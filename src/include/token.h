@@ -40,7 +40,7 @@ typedef enum {
 
 } TokenType;
 
-char *TokenType_String(TokenType);
+const char *TokenType_String(TokenType);
 TokenType TokenType_Leading(char);
 
 typedef struct {

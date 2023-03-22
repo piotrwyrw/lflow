@@ -7,7 +7,7 @@
     case e: \
         return #e;
 
-char *TokenType_String(TokenType type) {
+const char *TokenType_String(TokenType type) {
     switch (type) {
         AUTO_CASE(TT_UNKNOWN)
         AUTO_CASE(TT_IDEN)
