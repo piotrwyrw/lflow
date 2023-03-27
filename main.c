@@ -20,11 +20,10 @@ int main(void) {
 
     Parser *parser = Parser_CreateParser(tokenizer);
 
-    Parser_ParseStringLiteral(parser);
+    Parser_ParseIntegerLiteral(parser);
 
     Parser_DestroyParser(parser);
 
     free(primed);
-
     return 0;
 }

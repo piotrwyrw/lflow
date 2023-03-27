@@ -1,4 +1,5 @@
 #include "include/parse.h"
+#include "include/conv.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -39,4 +40,20 @@ Node *Parser_ParseStringLiteral(Parser *parser) {
         return NULL;
     }
     return Node_CreateStringLiteral(strdup(parser->current->value));
+}
+
+Node *Parser_ParseIntegerLiteral(Parser *parser) {
+    if (parser->current->type != TT_LINT) {
+        SYNTAX_ERR("Expected integer literal, got %s\n", TokenType_String(parser->current->type));
+        return NULL;
+    }
+    return Node_CreateIntegerLiteral(stoi(parser->current->value));
+}
+
+Node *Parser_ParseRealLiteral(Parser *parser) {
+    if (parser->current->type != TT_LFLOAT) {
+        SYNTAX_ERR("Expected float literal, got %s\n", TokenType_String(parser->current->type));
+        return NULL;
+    }
+    return Node_CreateFloatLiteral(stof(parser->current->value));
 }

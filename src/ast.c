@@ -1,7 +1,9 @@
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include "include/ast.h"
+#include "include/util.h"
 
 #define CASE(x) case x: return #x;
 
@@ -83,4 +85,23 @@ void Node_Destroy(Node *node) {
     }
 
     Node_DestroyBase(node);
+}
+
+#define OUTPUT(...) \
+        printf("%s", indent(depth)); \
+        printf(__VA_ARGS__);
+
+void Node_Print(unsigned depth, Node *node) {
+    switch (node->type) {
+
+        case NODE_PROGRAM:
+            depth ++;
+            for (int i = 0; i < node->node.program.nodes->length; i ++) {
+                Node_Print(depth, node->node.program.nodes->base[i]);
+            depth --;
+            break;
+
+        
+
+    }
 }

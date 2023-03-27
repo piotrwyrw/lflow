@@ -22,5 +22,7 @@ void Parser_DestroyParser(Parser *);
 void Parser_Consume(Parser *);
 
 Node *Parser_ParseStringLiteral(Parser *);
+Node *Parser_ParseIntegerLiteral(Parser *);
+Node *Parser_ParseRealLiteral(Parser *);
 
 #endif

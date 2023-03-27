@@ -70,4 +70,6 @@ Node *Node_createVariableDeclaration(Token *, Node *);
 
 void Node_Destroy(Node *);
 
+void Node_Print(unsigned, Node *);
+
 #endif
