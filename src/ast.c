@@ -34,8 +34,6 @@ const char *BinaryType_ToString(BinaryType type) {
     }
 }
 
-#undef CASE
-
 BinaryType BinaryType_FromTokenType(TokenType tt) {
     switch (tt) {
         case TT_PLUS:
@@ -50,6 +48,27 @@ BinaryType BinaryType_FromTokenType(TokenType tt) {
             return BIN_UNDEF;
     }
 }
+
+ModificationQualifier ModificationQualifier_FromTokenType(TokenType token) {
+    switch (token) {
+        case TT_KW_VARYING:
+            return MQ_VARYING;
+        case TT_KW_CONSTANT:
+            return MQ_CONST;
+        default:
+            return MQ_UNDEF;
+    }
+}
+
+const char *ModificationQualifier_String(ModificationQualifier modQua) {
+    switch (modQua) {
+        CASE(MQ_CONST)
+        CASE(MQ_VARYING)
+        CASE(MQ_UNDEF)
+    }
+}
+
+#undef CASE
 
 Node *Node_CreateBase(NodeType type) {
     Node *node = malloc(sizeof(Node));
@@ -86,11 +105,13 @@ Node *Node_CreateFloatLiteral(float f) {
     return n;
 }
 
-Node *Node_CreateVariableDeclaration(Token *id, Node *value) {
+Node *Node_CreateVariableDeclaration(Token *id, Node *value, Token *type, ModificationQualifier modQua) {
     Node *n = Node_CreateBase(NODE_VARIABLE_DECLARATION);
     n->node.var_decl.defined = value != NULL;
     n->node.var_decl.value = value;
     n->node.var_decl.id = Token_Dup(id);
+    n->node.var_decl.type = Token_Dup(type);
+    n->node.var_decl.mutable = modQua;
     return n;
 }
 
@@ -116,7 +137,16 @@ Node *Node_CreateFunctionCall(Token *id, Array *xprs) {
     return n;
 }
 
+Node *Node_CreateVariableReference(Token *id) {
+    Node *n = Node_CreateBase(NODE_VARIABLE_REFERENCE);
+    n->node.var_ref.id = Token_Dup(id);
+    return n;
+}
+
 void Node_DestroyRecurse(Node *node) {
+
+    if (!node)
+        return;
 
     switch (node->type) {
 
@@ -126,6 +156,7 @@ void Node_DestroyRecurse(Node *node) {
 
         case NODE_VARIABLE_DECLARATION:
             Token_Destroy(node->node.var_decl.id);
+            Token_Destroy(node->node.var_decl.type);
             Node_DestroyRecurse(node->node.var_decl.value);
             break;
 
@@ -146,6 +177,10 @@ void Node_DestroyRecurse(Node *node) {
         case NODE_FUNCTION_CALL:
             Token_Destroy(node->node.fcall.id);
             Array_DestroyCallBack(node->node.fcall.exprs, (void *) Node_DestroyRecurse);
+            break;
+
+        case NODE_VARIABLE_REFERENCE:
+            Token_Destroy(node->node.var_ref.id);
             break;
     }
 
@@ -185,12 +220,17 @@ void Node_Print(unsigned depth, Node *node) {
         OUTPUT("Float Literal: %f\n", node->node.float_lit.f);
             break;
         case NODE_VARIABLE_DECLARATION:
-        OUTPUT("Variable Declaration: \n");
+        OUTPUT("Variable Declaration [%s]:\n", ModificationQualifier_String(node->node.var_decl.mutable));
             depth++;
             OUTPUT("Identifier: %s\n", node->node.var_decl.id->value);
+            OUTPUT("Type: %s\n", node->node.var_decl.type->value);
             OUTPUT("Expression: \n");
             depth++;
-            Node_Print(depth, node->node.var_decl.value);
+            if (node->node.var_decl.value)
+                Node_Print(depth, node->node.var_decl.value);
+            else {
+                OUTPUT("(Not assigned)\n");
+            }
             depth -= 2;
             break;
         case NODE_VARIABLE_ASSIGNMENT:
@@ -232,6 +272,9 @@ void Node_Print(unsigned depth, Node *node) {
             }
             depth--;
             depth--;
+            break;
+        case NODE_VARIABLE_REFERENCE:
+            OUTPUT("Variable reference [%s]\n", node->node.var_ref.id->value);
             break;
         default:
         OUTPUT("(Undefined Node)\n");

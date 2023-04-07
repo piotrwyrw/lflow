@@ -29,6 +29,12 @@ int main(void) {
 
     Parser_DestroyParser(parser);
 
+//    while (Tokenizer_HasNext(tokenizer)) {
+//        if (!Tokenizer_Next(tokenizer))
+//            break;
+//        printf("[%s]\n", tokenizer->current->value);
+//    }
+
     Tokenizer_Destroy(tokenizer);
 
     free(primed);

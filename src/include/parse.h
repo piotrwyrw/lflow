@@ -36,6 +36,7 @@ Node *Parser_ParseIntegerLiteral(Parser *);
 Node *Parser_ParseRealLiteral(Parser *);
 
 Node *Parser_ParseFunctionCall(Parser *);
+Node *Parser_ParseVariableDeclaration(Parser *);
 
 Node *Parser_ParseExpression(Parser *);
 Node *Parser_ParseSecondDegree(Parser *);

@@ -48,7 +48,7 @@ Node *Parser_ParseProgram(Parser *parser) {
     Array *arr = Array_Create();
 
     while (true) {
-        if (!Tokenizer_HasNext(parser->tokenizer))
+        if (Parser_Compare(parser, CURRENT, TT_UNKNOWN, NULL))
             break;
 
         Node *n = Parser_ParseNext(parser);
@@ -65,13 +65,23 @@ Node *Parser_ParseProgram(Parser *parser) {
 }
 
 Node *Parser_ParseNext(Parser *parser) {
+
+    if (Parser_Compare(parser, CURRENT, TT_KW_VARYING, NULL) || Parser_Compare(parser, CURRENT, TT_KW_CONSTANT, NULL))
+        return Parser_ParseVariableDeclaration(parser);
+
+    // Last resort
     Node *n = Parser_ParseExpression(parser);
+
+    if (!n)
+        return NULL;
+
     if (!Parser_Compare(parser, CURRENT, TT_SEMI, NULL)) {
         SYNTAX_ERR("Expected ';' after expression.\n");
         if (n)
             Node_DestroyRecurse(n);
         return NULL;
     }
+
     Parser_Consume(parser); // Skip ';'
     return n;
 }
@@ -104,6 +114,16 @@ Node *Parser_ParseRealLiteral(Parser *parser) {
     Node *lit = Node_CreateFloatLiteral(stof(parser->current->value));
     Parser_Consume(parser); // Next token
     return lit;
+}
+
+Node *Parser_ParseVariableReference(Parser *parser) {
+    if (!Parser_Compare(parser, CURRENT, TT_IDEN, NULL)) {
+        SYNTAX_ERR("Expected identifier, got %s.\n", TokenType_String(parser->current->type));
+        return NULL;
+    }
+    Node *ref = Node_CreateVariableReference(parser->current);
+    Parser_Consume(parser); // SKip to the next token
+    return ref;
 }
 
 // identifier "(" expression ["," expression] ... ")"
@@ -170,6 +190,102 @@ Node *Parser_ParseFunctionCall(Parser *parser) {
     Token_Destroy(identifier);
 
     return fcall;
+}
+
+// "varying" | "const" identifier ":" type "=" expression ";"
+Node *Parser_ParseVariableDeclaration(Parser *parser) {
+    if (!Parser_Compare(parser, CURRENT, TT_KW_VARYING, NULL) &&
+        !Parser_Compare(parser, CURRENT, TT_KW_CONSTANT, NULL)) {
+        SYNTAX_ERR("Expected modification qualifier ('varying' or 'const'). Got \"%s\" instead.\n",
+                   parser->current->value);
+        return NULL;
+    }
+
+    ModificationQualifier modQua = ModificationQualifier_FromTokenType(parser->current->type);
+
+    Parser_Consume(parser); // Skip the qualifier
+
+    if (!Parser_Compare(parser, CURRENT, TT_IDEN, NULL)) {
+        SYNTAX_ERR("Expected variable name (identifier). Got %s.\n", TokenType_String(parser->current->type));
+        return NULL;
+    }
+
+    Token *id = Token_Dup(parser->current);
+
+    Parser_Consume(parser); // Skip the identifier
+
+    if (!Parser_Compare(parser, CURRENT, TT_COLON, NULL)) {
+        SYNTAX_ERR("Expected colon ':' after identifier, got \"%s\".\n", parser->current->value);
+        return NULL;
+    }
+
+    Parser_Consume(parser); // Skip the colon
+
+    if (!Parser_Compare(parser, CURRENT, TT_IDEN, NULL)) {
+        SYNTAX_ERR("Expected type (identifier) after ':', got %s.\n", TokenType_String(parser->current->type));
+        Token_Destroy(id);
+        return NULL;
+    }
+
+    Token *type = Token_Dup(parser->current);
+
+    Parser_Consume(parser); // Skip the type identifier
+
+    // No initial value
+    if (Parser_Compare(parser, CURRENT, TT_SEMI, NULL)) {
+
+        if (modQua == MQ_CONST) {
+            SYNTAX_ERR("Variables with the 'constant' qualifier may not be left unassigned upon declaration. Missing initial value for const \"%s\".\n", id->value);
+            Token_Destroy(id);
+            Token_Destroy(type);
+            return NULL;
+        }
+
+        Parser_Consume(parser); // Skip ';'
+
+        Node *n = Node_CreateVariableDeclaration(id, NULL, type, modQua);
+
+        Token_Destroy(id);
+        Token_Destroy(type);
+
+        return n;
+    }
+
+    // Initial value
+    if (!Parser_Compare(parser, CURRENT, TT_EQUALS, NULL)) {
+        SYNTAX_ERR("Expected ';' or '=' and an initial value for the variable \"%s\", got %s.\n", id->value,
+                   TokenType_String(parser->current->type));
+        Token_Destroy(id);
+        Token_Destroy(type);
+        return NULL;
+    }
+
+    Parser_Consume(parser); // SKip '='
+
+    Node *expr = Parser_ParseExpression(parser);
+
+    if (expr == NULL) {
+        Token_Destroy(id);
+        Token_Destroy(type);
+        return NULL;
+    }
+
+    if (!Parser_Compare(parser, CURRENT, TT_SEMI, NULL)) {
+        SYNTAX_ERR("Expected ';' after the expression, got %s.\n", TokenType_String(parser->current->type));
+        Token_Destroy(id);
+        Token_Destroy(type);
+        Node_DestroyRecurse(expr);
+        return NULL;
+    }
+
+    Parser_Consume(parser); // Skip ';'
+
+    Node *n = Node_CreateVariableDeclaration(id, expr, type, modQua);
+
+    Token_Destroy(id);
+    Token_Destroy(type);
+
+    return n;
 }
 
 Node *Parser_ParseExpression(Parser *parser) {
@@ -263,6 +379,11 @@ Node *Parser_ParseAtom(Parser *parser) {
     // String Literal
     if (Parser_Compare(parser, CURRENT, TT_LSTRING, NULL)) {
         return Parser_ParseStringLiteral(parser);
+    }
+
+    // Variable reference
+    if (Parser_Compare(parser, CURRENT, TT_IDEN, NULL)) {
+        return Parser_ParseVariableReference(parser);
     }
 
     SYNTAX_ERR("Unknown atom starting with \"%s\".\n", parser->current->value);

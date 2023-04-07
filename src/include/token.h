@@ -37,7 +37,14 @@ typedef enum {
     TT_POINT_LEFT,      // <-
     TT_DOUBLE_EQUALS,   // ==
     TT_AND_AND,         // &&
-    TT_OR_OR            // ||
+    TT_OR_OR,           // ||
+
+    // Keywords
+    TT_KW_PROCEDURE,
+    TT_KW_CHECK,
+    TT_KW_VARYING,
+    TT_KW_CONSTANT,      // const
+    TT_KW_JMP,
 
 } TokenType;
 

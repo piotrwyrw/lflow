@@ -1,1 +1,3 @@
-1 + 2 * 4 / parse_int("45345");
+const pi: real = 3.1415;
+const radius: int = 4;
+varying area: real = (pi * pi) * radius;

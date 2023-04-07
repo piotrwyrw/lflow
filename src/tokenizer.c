@@ -141,7 +141,7 @@ Status Tokenizer_Next(Tokenizer *tokenizer) {
         }
 
         // Check if the nature of the character has changed (letter, digit)
-        if ((DIGIT(c) && type == TT_LINT || type == TT_LFLOAT) || ((LETTER(c) || DIGIT(c)) && type == TT_IDEN)) {
+        if ((DIGIT(c) && type == TT_LINT) || (DIGIT(c) && type == TT_LFLOAT) || ((LETTER(c) || DIGIT(c)) && type == TT_IDEN)) {
             // Everything is alright, append to the buffer
             XString_Append(buffer, c);
             goto CONTINUE;
@@ -164,7 +164,24 @@ Status Tokenizer_Next(Tokenizer *tokenizer) {
         break;
     }
 
+    // Keywords
+
+    if (type != TT_IDEN)
+        goto skip;
+
+#define BIND_KW(s, val) if (strcmp(buffer->str, s) == 0) { type = val; }
+
+    BIND_KW("procedure", TT_KW_PROCEDURE)
+    BIND_KW("check", TT_KW_CHECK)
+    BIND_KW("varying", TT_KW_VARYING)
+    BIND_KW("const", TT_KW_CONSTANT)
+    BIND_KW("jmp", TT_KW_JMP)
+
+#undef BIND_KW
+
+    skip:
     Token_Destroy(tokenizer->current);
+
     tokenizer->current = Token_Create(buffer->str, type);
     XString_Destroy(buffer);
 
