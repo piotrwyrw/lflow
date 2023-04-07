@@ -24,7 +24,7 @@ void Tokenizer_Destroy(Tokenizer *tokenizer) {
 
 #define LAST_IDX ((tokenizer->ix + 1 > tokenizer->length))
 #define NCLASS ((type == TT_UNKNOWN))
-#define LETTER(c) ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
+#define LETTER(c) ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_')
 #define DIGIT(c) ((c >= '0' && c <= '9'))
 #define FAIL \
         XString_Destroy(buffer); \

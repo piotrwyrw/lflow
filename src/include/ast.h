@@ -11,10 +11,23 @@ typedef enum {
     NODE_INTEGER_LITERAL,
     NODE_FLOAT_LITERAL,
     NODE_VARIABLE_DECLARATION,
-    NODE_VARIABLE_ASSIGNMENT
+    NODE_VARIABLE_ASSIGNMENT,
+    NODE_BINARY_EXPRESSION,
+    NODE_FUNCTION_CALL
 } NodeType;
 
 const char *NodeType_ToString(NodeType);
+
+typedef enum {
+    BIN_ADD,
+    BIN_SUB,
+    BIN_MUL,
+    BIN_DIV,
+    BIN_UNDEF
+} BinaryType;
+
+const char *BinaryType_ToString(BinaryType);
+BinaryType BinaryType_FromTokenType(TokenType);
 
 typedef struct Node Node;
 
@@ -38,7 +51,7 @@ struct Node {
             float f;
         } float_lit;
 
-        // Declarations
+        // Declaration
         struct {
             Token *id;
             bool defined;
@@ -50,6 +63,19 @@ struct Node {
             Token *id;
             Node *value;
         } var_assign;
+
+        // Binary operation
+        struct {
+            Node *left;
+            Node *right;
+            BinaryType op;
+        } binary;
+
+        // Function call
+        struct {
+            Token *id;
+            Array *exprs;
+        } fcall;
 
     } node;
 };
@@ -66,9 +92,15 @@ Node *Node_CreateIntegerLiteral(int);
 
 Node *Node_CreateFloatLiteral(float);
 
-Node *Node_createVariableDeclaration(Token *, Node *);
+Node *Node_CreateVariableDeclaration(Token *, Node *);
 
-void Node_Destroy(Node *);
+Node *Node_CreateVariableAssignment(Token *, Node *);
+
+Node *Node_CreateBinaryOperation(Node *, Node *, BinaryType);
+
+Node *Node_CreateFunctionCall(Token *, Array *);
+
+void Node_DestroyRecurse(Node *);
 
 void Node_Print(unsigned, Node *);
 

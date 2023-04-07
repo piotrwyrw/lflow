@@ -8,7 +8,8 @@ typedef struct {
 
 Array *Array_Create();
 void Array_Destroy(Array *);
+void Array_DestroyCallBack(Array *, void (*)(void *));
 void Array_Push(Array *, void *);
-void *Array_At(Array *, int);
+void *Array_At(Array *, unsigned);
 
 #endif

@@ -30,6 +30,7 @@ typedef enum {
     TT_VERTBAR,         // |
     TT_LGREATER,        // >
     TT_RGREATER,        // <
+    TT_COMMA,           // ,
 
     // Complex tokens
     TT_POINT_RIGHT,     // ->

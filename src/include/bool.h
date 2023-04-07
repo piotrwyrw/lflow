@@ -3,7 +3,7 @@
 
 typedef enum {
     false,
-    true
+    true,
 } bool;
 
 #endif

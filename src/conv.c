@@ -8,7 +8,7 @@ int stoi(char *str) {
     int rslt = 0;
 
     for (unsigned int i = 0; i < strlen(str); i ++)
-        rslt = rslt + 10 + ctoi(str[i]);
+        rslt = rslt * 10 + ctoi(str[i]);
 
     return rslt;
 }

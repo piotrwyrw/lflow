@@ -20,10 +20,18 @@ int main(void) {
 
     Parser *parser = Parser_CreateParser(tokenizer);
 
-    Parser_ParseIntegerLiteral(parser);
+    Node *n = Parser_ParseProgram(parser);
+
+    if (n) {
+        Node_Print(0, n);
+        Node_DestroyRecurse(n);
+    }
 
     Parser_DestroyParser(parser);
 
+    Tokenizer_Destroy(tokenizer);
+
     free(primed);
+
     return 0;
 }

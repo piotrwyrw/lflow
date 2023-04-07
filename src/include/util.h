@@ -2,7 +2,6 @@
 #define LFLOW_UTIL_H
 
 char *repeat(char, unsigned);
-const char *indent(unsigned);
-const char *stack(char *);
+char *indent(unsigned);
 
 #endif

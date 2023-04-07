@@ -14,12 +14,19 @@ void Array_Destroy(Array *arr) {
     free(arr);
 }
 
+void Array_DestroyCallBack(Array *array, void (*callback)(void *)) {
+    for (unsigned i = 0; i < array->length; i ++)
+        callback(array->base[i]);
+
+    Array_Destroy(array);
+}
+
 void Array_Push(Array *arr, void *ptr) {
-    realloc(arr->base, (++ arr->length) * sizeof(void *));
+    arr->base = realloc(arr->base, (++ arr->length) * sizeof(void *));
     arr->base[arr->length - 1] = ptr;
 }
 
-void *Array_At(Array *arr, int i) {
+void *Array_At(Array *arr, unsigned i) {
     if (i >= arr->length)
         return NULL;
 

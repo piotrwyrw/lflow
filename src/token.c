@@ -34,6 +34,7 @@ const char *TokenType_String(TokenType type) {
         AUTO_CASE(TT_VERTBAR)
         AUTO_CASE(TT_LGREATER)
         AUTO_CASE(TT_RGREATER)
+        AUTO_CASE(TT_COMMA)
 
         AUTO_CASE(TT_POINT_RIGHT)
         AUTO_CASE(TT_POINT_LEFT)
@@ -58,10 +59,7 @@ Token *Token_Create(char *val, TokenType type) {
 }
 
 void Token_Destroy(Token *tok) {
-    if (!tok)
-        return;
-    if (tok->value)
-        free(tok->value);
+    free(tok->value);
     free(tok);
 }
 
@@ -87,6 +85,7 @@ TokenType TokenType_Leading(char c) {
         BIND('|', TT_VERTBAR)
         BIND('>', TT_LGREATER)
         BIND('<', TT_RGREATER)
+        BIND(',', TT_COMMA)
         default:
             return TT_UNKNOWN;
     }
