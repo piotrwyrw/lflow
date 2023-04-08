@@ -12,6 +12,6 @@ char *repeat(char c, unsigned n) {
 }
 
 char *indent(unsigned n) {
-    char *str = repeat('\t', n);
+    char *str = repeat(' ', n);
     return str;
 }

@@ -14,16 +14,30 @@ typedef enum {
     NODE_VARIABLE_ASSIGNMENT,
     NODE_BINARY_EXPRESSION,
     NODE_FUNCTION_CALL,
-    NODE_VARIABLE_REFERENCE
+    NODE_VARIABLE_REFERENCE,
+    NODE_BLOCK,
+    NODE_FUNCTION_DEFINITION,
+    NODE_RETURN,
+    NODE_CHECK
 } NodeType;
 
 const char *NodeType_ToString(NodeType);
 
 typedef enum {
+
+    // Arithmetics
     BIN_ADD,
     BIN_SUB,
     BIN_MUL,
     BIN_DIV,
+
+    // Logical boolean oeprations
+    BIN_OR,
+    BIN_AND,
+    BIN_EQUAL,
+    BIN_LGREATER,
+    BIN_RGREATER,
+
     BIN_UNDEF
 } BinaryType;
 
@@ -94,6 +108,31 @@ struct Node {
             Token *id;
         } var_ref;
 
+        // Compound / Block statement
+        struct {
+            Array *nodes;
+        } block;
+
+        // Function definition
+        struct {
+            Token *id;
+            Token *type;
+            Array *params;
+            Node *block;
+        } func_def;
+
+        // Return statement
+        struct {
+            Node *expr;
+        } ret;
+
+        // Check statement
+        struct {
+            Node *expr;
+            Node *block;
+            Node *sub;
+        } check;
+
     } node;
 };
 
@@ -118,6 +157,14 @@ Node *Node_CreateBinaryOperation(Node *, Node *, BinaryType);
 Node *Node_CreateFunctionCall(Token *, Array *);
 
 Node *Node_CreateVariableReference(Token *);
+
+Node *Node_CreateBlock(Array *);
+
+Node *Node_CreateFunctionDefinition(Token *, Token *, Array *, Node *);
+
+Node *Node_CreateReturn(Node *);
+
+Node *Node_CreateCheck(Node *, Node *, Node *);
 
 void Node_DestroyRecurse(Node *);
 

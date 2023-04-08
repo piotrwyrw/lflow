@@ -39,6 +39,7 @@ const char *TokenType_String(TokenType type) {
         AUTO_CASE(TT_POINT_RIGHT)
         AUTO_CASE(TT_POINT_LEFT)
         AUTO_CASE(TT_DOUBLE_EQUALS)
+        AUTO_CASE(TT_NOT_EQUALS)
         AUTO_CASE(TT_AND_AND)
         AUTO_CASE(TT_OR_OR)
 
@@ -47,6 +48,8 @@ const char *TokenType_String(TokenType type) {
         AUTO_CASE(TT_KW_VARYING)
         AUTO_CASE(TT_KW_CONSTANT)
         AUTO_CASE(TT_KW_JMP)
+        AUTO_CASE(TT_KW_OTHERWISE)
+        AUTO_CASE(TT_KW_RETURN)
 
         default:
             return "(Unknown type)";

@@ -2,6 +2,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "include/param.h"
 #include "include/ast.h"
 #include "include/util.h"
 
@@ -28,6 +29,11 @@ const char *BinaryType_ToString(BinaryType type) {
         CASE(BIN_SUB);
         CASE(BIN_MUL);
         CASE(BIN_DIV);
+        CASE(BIN_OR);
+        CASE(BIN_AND);
+        CASE(BIN_EQUAL);
+        CASE(BIN_LGREATER);
+        CASE(BIN_RGREATER);
 
         default:
             return "*Unknown Binary Type)";
@@ -44,6 +50,16 @@ BinaryType BinaryType_FromTokenType(TokenType tt) {
             return BIN_MUL;
         case TT_SLASH:
             return BIN_DIV;
+        case TT_AND_AND:
+            return BIN_AND;
+        case TT_OR_OR:
+            return BIN_OR;
+        case TT_DOUBLE_EQUALS:
+            return BIN_EQUAL;
+        case TT_LGREATER:
+            return BIN_LGREATER;
+        case TT_RGREATER:
+            return BIN_RGREATER;
         default:
             return BIN_UNDEF;
     }
@@ -143,6 +159,35 @@ Node *Node_CreateVariableReference(Token *id) {
     return n;
 }
 
+Node *Node_CreateBlock(Array *arr) {
+    Node *n = Node_CreateBase(NODE_BLOCK);
+    n->node.block.nodes = arr;
+    return n;
+}
+
+Node *Node_CreateFunctionDefinition(Token *id, Token *type, Array *params, Node *blk) {
+    Node *n = Node_CreateBase(NODE_FUNCTION_DEFINITION);
+    n->node.func_def.id = Token_Dup(id);
+    n->node.func_def.type = Token_Dup(type);
+    n->node.func_def.params = params;
+    n->node.func_def.block = blk;
+    return n;
+}
+
+Node *Node_CreateReturn(Node *expr) {
+    Node *n = Node_CreateBase(NODE_RETURN);
+    n->node.ret.expr = expr;
+    return n;
+}
+
+Node *Node_CreateCheck(Node *expr, Node *block, Node *sub) {
+    Node *n = Node_CreateBase(NODE_CHECK);
+    n->node.check.expr = expr;
+    n->node.check.block = block;
+    n->node.check.sub = sub;
+    return n;
+}
+
 void Node_DestroyRecurse(Node *node) {
 
     if (!node)
@@ -182,6 +227,28 @@ void Node_DestroyRecurse(Node *node) {
         case NODE_VARIABLE_REFERENCE:
             Token_Destroy(node->node.var_ref.id);
             break;
+
+        case NODE_BLOCK:
+            Array_DestroyCallBack(node->node.block.nodes, (void *) Node_DestroyRecurse);
+            break;
+
+        case NODE_FUNCTION_DEFINITION:
+            Token_Destroy(node->node.func_def.id);
+            Token_Destroy(node->node.func_def.type);
+            Array_DestroyCallBack(node->node.func_def.params, (void *) FunctionParameter_Destroy);
+            Node_DestroyRecurse(node->node.func_def.block);
+            break;
+
+        case NODE_RETURN:
+            Node_DestroyRecurse(node->node.ret.expr);
+            break;
+
+        case NODE_CHECK:
+            Node_DestroyRecurse(node->node.check.expr);
+            Node_DestroyRecurse(node->node.check.block);
+            Node_DestroyRecurse(node->node.check.sub);
+            break;
+
     }
 
     Node_DestroyBase(node);
@@ -204,67 +271,79 @@ void Node_Print(unsigned depth, Node *node) {
 
     switch (node->type) {
         case NODE_PROGRAM:
-        OUTPUT("Program: \n");
+        OUTPUT("Program\n");
             depth++;
             for (int i = 0; i < node->node.program.nodes->length; i++)
                 Node_Print(depth, node->node.program.nodes->base[i]);
             depth--;
             break;
         case NODE_STRING_LITERAL:
-        OUTPUT("String Literal: %s\n", node->node.str_lit.str);
+        OUTPUT("String Literal\n");
+            depth++;
+            OUTPUT("Value: %s\n", node->node.str_lit.str);
+            depth--;
             break;
         case NODE_INTEGER_LITERAL:
-        OUTPUT("Integer Literal: %d\n", node->node.int_lit.n);
+        OUTPUT("Integer Literal\n");
+            depth++;
+            OUTPUT("Value: %d\n", node->node.int_lit.n);
+            depth--;
             break;
         case NODE_FLOAT_LITERAL:
-        OUTPUT("Float Literal: %f\n", node->node.float_lit.f);
+        OUTPUT("Float Literal\n");
+            depth++;
+            OUTPUT("Value: %f\n", node->node.float_lit.f);
+            depth--;
             break;
         case NODE_VARIABLE_DECLARATION:
-        OUTPUT("Variable Declaration [%s]:\n", ModificationQualifier_String(node->node.var_decl.mutable));
+        OUTPUT("Variable Declaration\n");
             depth++;
+            OUTPUT("Mutable flag: %s\n", ModificationQualifier_String(node->node.var_decl.mutable));
             OUTPUT("Identifier: %s\n", node->node.var_decl.id->value);
             OUTPUT("Type: %s\n", node->node.var_decl.type->value);
-            OUTPUT("Expression: \n");
+            OUTPUT("Expression\n");
             depth++;
             if (node->node.var_decl.value)
                 Node_Print(depth, node->node.var_decl.value);
             else {
-                OUTPUT("(Not assigned)\n");
+                OUTPUT("Not assigned\n");
             }
             depth -= 2;
             break;
         case NODE_VARIABLE_ASSIGNMENT:
-        OUTPUT("Variable Assignment: \n");
+        OUTPUT("Variable Assignment\n");
             depth++;
             OUTPUT("Identifier: %s\n", node->node.var_assign.id->value);
-            OUTPUT("Expression:\n");
+            OUTPUT("Expression\n");
             depth++;
             Node_Print(depth, node->node.var_assign.value);
             depth -= 2;
             break;
         case NODE_BINARY_EXPRESSION:
-        OUTPUT("Binary expression [%s]:\n", BinaryType_ToString(node->node.binary.op));
+        OUTPUT("Binary expression\n");
             depth++;
-            OUTPUT("Left:\n");
+            OUTPUT("Operation: %s\n", BinaryType_ToString(node->node.binary.op));
+            OUTPUT("Left\n");
             depth++;
             Node_Print(depth, node->node.binary.left);
             depth--;
-            OUTPUT("Right:\n");
+            OUTPUT("Right\n");
             depth++;
             Node_Print(depth, node->node.binary.right);
             depth--;
             depth--;
             break;
         case NODE_FUNCTION_CALL:
-        OUTPUT("Function call [%s]:\n", node->node.fcall.id->value);
+        OUTPUT("Function call\n");
             depth++;
-            OUTPUT("Parameters:\n");
+            OUTPUT("Identifier: %s\n", node->node.fcall.id->value);
+            OUTPUT("Parameters\n");
             depth++;
             if (node->node.fcall.exprs->length == 0) {
-                OUTPUT("(no parameters)\n");
+                OUTPUT("No parameters\n");
             } else {
                 for (unsigned i = 0; i < node->node.fcall.exprs->length; i++) {
-                    OUTPUT("Parameter #%d:\n", i);
+                    OUTPUT("Parameter %d\n", i);
                     depth++;
                     Node_Print(depth, Array_At(node->node.fcall.exprs, i));
                     depth--;
@@ -274,10 +353,74 @@ void Node_Print(unsigned depth, Node *node) {
             depth--;
             break;
         case NODE_VARIABLE_REFERENCE:
-            OUTPUT("Variable reference [%s]\n", node->node.var_ref.id->value);
+        OUTPUT("Variable reference\n");
+            depth++;
+            OUTPUT("Identifier: %s\n", node->node.var_ref.id->value);
+            depth--;
+            break;
+        case NODE_BLOCK:
+        OUTPUT("Block statement\n");
+            depth++;
+            if (node->node.block.nodes->length == 0) {
+                OUTPUT("Empty block\n");
+            }
+            for (unsigned i = 0; i < node->node.block.nodes->length; i++)
+                Node_Print(depth, Array_At(node->node.block.nodes, i));
+            depth--;
+            break;
+        case NODE_FUNCTION_DEFINITION:
+        OUTPUT("Function definition\n");
+            depth++;
+            OUTPUT("Identifier: %s\n", node->node.func_def.id->value);
+            OUTPUT("Type: %s\n", node->node.func_def.type->value);
+            OUTPUT("Parameters\n");
+            depth++;
+            if (node->node.func_def.params->length == 0) {
+                OUTPUT("No parameters\n");
+            }
+            for (unsigned i = 0; i < node->node.func_def.params->length; i++) {
+                FunctionParameter *param = Array_At(node->node.func_def.params, i);
+                OUTPUT("Parameter\n");
+                depth++;
+                OUTPUT("Identifier: %s\n", param->id->value);
+                OUTPUT("Type: %s\n", param->type->value);
+                depth--;
+            }
+            depth--;
+            Node_Print(depth, node->node.func_def.block);
+            depth--;
+            break;
+        case NODE_RETURN:
+        OUTPUT("Return\n");
+            depth++;
+            if (node->node.ret.expr)
+                Node_Print(depth, node->node.ret.expr);
+            else {
+                OUTPUT("No expression\n");
+            }
+            depth--;
+            break;
+        case NODE_CHECK:
+        OUTPUT("Check\n");
+            depth++;
+            OUTPUT("Expression\n");
+            depth++;
+            if (!node->node.check.expr) {
+                OUTPUT("No expression\n");
+            } else {
+                Node_Print(depth, node->node.check.expr);
+            }
+            depth--;
+            Node_Print(depth, node->node.check.block);
+            if (node->node.check.sub) {
+                OUTPUT("Sub-check\n");
+                depth++;
+                Node_Print(depth, node->node.check.sub);
+                depth--;
+            }
             break;
         default:
-        OUTPUT("(Undefined Node)\n");
+        OUTPUT("\\(Undefined Node\\)\n");
             break;
     }
 }

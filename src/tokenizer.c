@@ -29,7 +29,7 @@ void Tokenizer_Destroy(Tokenizer *tokenizer) {
 #define FAIL \
         XString_Destroy(buffer); \
         return STATUS_FAIL;
-#define SPACE(c) (c == ' ' || c == '\t' || c == '\n')
+#define SPACE(c) (c == ' ' || c == '\t' || c == '\n' || c == '\r')
 
 int Tokenizer_HasNext(Tokenizer *tokenizer) {
     if (LAST_IDX)
@@ -99,24 +99,28 @@ Status Tokenizer_Next(Tokenizer *tokenizer) {
                 // Extra cases for complex tokens
                 if (c == '-' && next == '>') {
                     XString_Append(buffer, next);
-                    tokenizer->ix ++;
+                    tokenizer->ix++;
                     tt = TT_POINT_RIGHT;
                 } else if (c == '<' && next == '-') {
                     XString_Append(buffer, next);
-                    tokenizer->ix ++;
+                    tokenizer->ix++;
                     tt = TT_POINT_LEFT;
                 } else if (c == '=' && next == '=') {
                     XString_Append(buffer, next);
-                    tokenizer->ix ++;
+                    tokenizer->ix++;
                     tt = TT_DOUBLE_EQUALS;
-                }else if (c == '&' && next == '&') {
+                } else if (c == '&' && next == '&') {
                     XString_Append(buffer, next);
-                    tokenizer->ix ++;
+                    tokenizer->ix++;
                     tt = TT_AND_AND;
                 } else if (c == '|' && next == '|') {
                     XString_Append(buffer, next);
-                    tokenizer->ix ++;
+                    tokenizer->ix++;
                     tt = TT_OR_OR;
+                } else if (c == '!' && next == '=') {
+                    XString_Append(buffer, next);
+                    tokenizer->ix ++;
+                    tt = TT_NOT_EQUALS;
                 }
 
                 // Otherwise utilize the flow of the tokenizer to return the token
@@ -141,7 +145,8 @@ Status Tokenizer_Next(Tokenizer *tokenizer) {
         }
 
         // Check if the nature of the character has changed (letter, digit)
-        if ((DIGIT(c) && type == TT_LINT) || (DIGIT(c) && type == TT_LFLOAT) || ((LETTER(c) || DIGIT(c)) && type == TT_IDEN)) {
+        if ((DIGIT(c) && type == TT_LINT) || (DIGIT(c) && type == TT_LFLOAT) ||
+            ((LETTER(c) || DIGIT(c)) && type == TT_IDEN)) {
             // Everything is alright, append to the buffer
             XString_Append(buffer, c);
             goto CONTINUE;
@@ -176,6 +181,8 @@ Status Tokenizer_Next(Tokenizer *tokenizer) {
     BIND_KW("varying", TT_KW_VARYING)
     BIND_KW("const", TT_KW_CONSTANT)
     BIND_KW("jmp", TT_KW_JMP)
+    BIND_KW("return", TT_KW_RETURN)
+    BIND_KW("otherwise", TT_KW_OTHERWISE)
 
 #undef BIND_KW
 

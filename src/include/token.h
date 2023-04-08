@@ -36,6 +36,7 @@ typedef enum {
     TT_POINT_RIGHT,     // ->
     TT_POINT_LEFT,      // <-
     TT_DOUBLE_EQUALS,   // ==
+    TT_NOT_EQUALS,      // !=
     TT_AND_AND,         // &&
     TT_OR_OR,           // ||
 
@@ -45,6 +46,8 @@ typedef enum {
     TT_KW_VARYING,
     TT_KW_CONSTANT,      // const
     TT_KW_JMP,
+    TT_KW_RETURN,
+    TT_KW_OTHERWISE
 
 } TokenType;
 

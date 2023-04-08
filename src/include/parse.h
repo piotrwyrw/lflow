@@ -10,6 +10,10 @@
         printf("Syntax Error: "); \
         printf(__VA_ARGS__);
 
+#define WARN(...) \
+        printf("Warning: "); \
+        printf(__VA_ARGS__);
+
 typedef struct {
     Tokenizer *tokenizer;
     Token *current;
@@ -34,12 +38,19 @@ Node *Parser_ParseNext(Parser *);
 Node *Parser_ParseStringLiteral(Parser *);
 Node *Parser_ParseIntegerLiteral(Parser *);
 Node *Parser_ParseRealLiteral(Parser *);
+Node *Parser_ParseVariableReference(Parser *);
 
 Node *Parser_ParseFunctionCall(Parser *);
 Node *Parser_ParseVariableDeclaration(Parser *);
+Node *Parser_ParseVariableAssignment(Parser *);
 
+Node *Parser_ParseSubExpression(Parser *);
 Node *Parser_ParseExpression(Parser *);
 Node *Parser_ParseSecondDegree(Parser *);
 Node *Parser_ParseAtom(Parser *);
+Node *Parser_ParseBlock(Parser *);
+Node *Parser_ParseFunctionDefinition(Parser *);
+Node *Parser_ParseReturn(Parser *);
+Node *Parser_ParseCheck(Parser *);
 
 #endif
