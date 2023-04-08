@@ -10,11 +10,17 @@ Array *Array_Create() {
 }
 
 void Array_Destroy(Array *arr) {
+    if (!arr)
+        return;
+
     free(arr->base);
     free(arr);
 }
 
 void Array_DestroyCallBack(Array *array, void (*callback)(void *)) {
+    if (!array)
+        return;
+
     for (unsigned i = 0; i < array->length; i ++)
         callback(array->base[i]);
 

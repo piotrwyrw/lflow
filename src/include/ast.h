@@ -4,6 +4,7 @@
 #include "arr.h"
 #include "bool.h"
 #include "token.h"
+#include "type.h"
 
 typedef enum {
     NODE_PROGRAM,
@@ -78,7 +79,7 @@ struct Node {
         // Var  Declaration
         struct {
             Token *id;
-            Token *type;
+            Type *type;
             bool defined;
             Node *value;
             ModificationQualifier mutable;
@@ -109,14 +110,19 @@ struct Node {
         } var_ref;
 
         // Compound / Block statement
+        // Also a semantic scope
         struct {
             Array *nodes;
+
+            Array *declarations;    // } Managed and accessed by the
+            Node *super;            // } semantic analysis stage
+            Node *sub;              // }
         } block;
 
         // Function definition
         struct {
             Token *id;
-            Token *type;
+            Type *type;
             Array *params;
             Node *block;
         } func_def;

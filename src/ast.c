@@ -126,7 +126,7 @@ Node *Node_CreateVariableDeclaration(Token *id, Node *value, Token *type, Modifi
     n->node.var_decl.defined = value != NULL;
     n->node.var_decl.value = value;
     n->node.var_decl.id = Token_Dup(id);
-    n->node.var_decl.type = Token_Dup(type);
+    n->node.var_decl.type = Type_CreatePlaceholder(type);
     n->node.var_decl.mutable = modQua;
     return n;
 }
@@ -162,13 +162,16 @@ Node *Node_CreateVariableReference(Token *id) {
 Node *Node_CreateBlock(Array *arr) {
     Node *n = Node_CreateBase(NODE_BLOCK);
     n->node.block.nodes = arr;
+    n->node.block.sub = NULL;
+    n->node.block.super = NULL;
+    n->node.block.declarations = NULL;
     return n;
 }
 
 Node *Node_CreateFunctionDefinition(Token *id, Token *type, Array *params, Node *blk) {
     Node *n = Node_CreateBase(NODE_FUNCTION_DEFINITION);
     n->node.func_def.id = Token_Dup(id);
-    n->node.func_def.type = Token_Dup(type);
+    n->node.func_def.type = Type_CreatePlaceholder(type);
     n->node.func_def.params = params;
     n->node.func_def.block = blk;
     return n;
@@ -201,7 +204,7 @@ void Node_DestroyRecurse(Node *node) {
 
         case NODE_VARIABLE_DECLARATION:
             Token_Destroy(node->node.var_decl.id);
-            Token_Destroy(node->node.var_decl.type);
+            Type_DestroyType(node->node.var_decl.type);
             Node_DestroyRecurse(node->node.var_decl.value);
             break;
 
@@ -230,11 +233,16 @@ void Node_DestroyRecurse(Node *node) {
 
         case NODE_BLOCK:
             Array_DestroyCallBack(node->node.block.nodes, (void *) Node_DestroyRecurse);
+
+            Array_DestroyCallBack(node->node.block.declarations, (void *) Node_DestroyRecurse);
+            Node_DestroyRecurse(node->node.block.sub);
+            Node_DestroyRecurse(node->node.block.super);
+
             break;
 
         case NODE_FUNCTION_DEFINITION:
             Token_Destroy(node->node.func_def.id);
-            Token_Destroy(node->node.func_def.type);
+            Type_DestroyType(node->node.func_def.type);
             Array_DestroyCallBack(node->node.func_def.params, (void *) FunctionParameter_Destroy);
             Node_DestroyRecurse(node->node.func_def.block);
             break;
@@ -300,7 +308,7 @@ void Node_Print(unsigned depth, Node *node) {
             depth++;
             OUTPUT("Mutable flag: %s\n", ModificationQualifier_String(node->node.var_decl.mutable));
             OUTPUT("Identifier: %s\n", node->node.var_decl.id->value);
-            OUTPUT("Type: %s\n", node->node.var_decl.type->value);
+            OUTPUT("Type: %s\n", Type_Identifier(node->node.var_decl.type));
             OUTPUT("Expression\n");
             depth++;
             if (node->node.var_decl.value)
@@ -372,7 +380,7 @@ void Node_Print(unsigned depth, Node *node) {
         OUTPUT("Function definition\n");
             depth++;
             OUTPUT("Identifier: %s\n", node->node.func_def.id->value);
-            OUTPUT("Type: %s\n", node->node.func_def.type->value);
+            OUTPUT("Type: %s\n", Type_Identifier(node->node.func_def.type));
             OUTPUT("Parameters\n");
             depth++;
             if (node->node.func_def.params->length == 0) {
@@ -383,7 +391,7 @@ void Node_Print(unsigned depth, Node *node) {
                 OUTPUT("Parameter\n");
                 depth++;
                 OUTPUT("Identifier: %s\n", param->id->value);
-                OUTPUT("Type: %s\n", param->type->value);
+                OUTPUT("Type: %s\n", Type_Identifier(param->type));
                 depth--;
             }
             depth--;

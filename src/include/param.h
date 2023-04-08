@@ -6,10 +6,11 @@
 #define LFLOW_PARAM_H
 
 #include "token.h"
+#include "type.h"
 
 typedef struct {
     Token *id;
-    Token *type;
+    Type *type;
 } FunctionParameter;
 
 FunctionParameter *FunctionParameter_Create(Token *, Token *);

@@ -5,12 +5,12 @@
 FunctionParameter *FunctionParameter_Create(Token *id, Token *type) {
     FunctionParameter *fp = malloc(sizeof(FunctionParameter));
     fp->id = Token_Dup(id);
-    fp->type = Token_Dup(type);
+    fp->type = Type_CreatePlaceholder(type);
     return fp;
 }
 
 void FunctionParameter_Destroy(FunctionParameter *parameter) {
     Token_Destroy(parameter->id);
-    Token_Destroy(parameter->type);
+    Type_DestroyType(parameter->type);
     free(parameter);
 }
