@@ -1,49 +1,78 @@
 //
-// Created by pwpio on 08/04/2023.
+// Created by pwpio on 09/04/2023.
 //
 
 #ifndef LFLOW_TYPE_H
 #define LFLOW_TYPE_H
 
+#include "arr.h"
 #include "token.h"
+#include "bool.h"
+
+typedef struct Type Type;
 
 typedef enum {
-    TYPE_BUILTIN,
-    TYPE_DEFINED,
-    TYPE_PLACEHOLDER,
-} TypeType;
+    TYPE_VOID,      // No type (void)
+    TYPE_PRIMITIVE,
+    TYPE_COMPLEX,
+    TYPE_PLACEHOLDER
+} TypeClass;
 
 typedef enum {
-    BT_REAL,
-    BT_INTEGER,
-    BT_VOID
-} BuiltinType;
+    PRIMITIVE_INT8,
+    PRIMITIVE_INT16,
+    PRIMITIVE_INT32,
+    PRIMITIVE_INT64
+} PrimitiveType;
 
-const char *BuiltinType_ToString(BuiltinType);
+const char *PrimitiveType_String(PrimitiveType);
 
 typedef struct {
-    TypeType kind;
+    Token *id;
+    Type *type;
+} ComplexField;
+
+ComplexField *ComplexField_Create(Token *, Type *);
+void ComplexField_Destroy(ComplexField *);
+
+typedef struct {
+    Token *id;
+    Array *fields;
+} ComplexType;
+
+ComplexType *ComplexType_Create(Token *, Array *);
+void ComplexType_Destroy(ComplexType *);
+
+struct Type {
+    TypeClass type;
+
     union {
 
         struct {
-            BuiltinType type;
-        } builtin;
+            PrimitiveType type;
+        } primitive;
 
         struct {
-            Token *lookupId;
-        } defined;
+            Token *id;
+            ComplexType *ref;
+        } complx;
 
         struct {
             Token *id;
         } placeholder;
 
-    } type;
-} Type;
+    } content;
 
-Type *Type_CreateBuiltin(BuiltinType);
-Type *Type_CreateDefined(Token *);
+};
+
+Type *Type_CreateVoid();
+Type *Type_CreatePrimitive(PrimitiveType);
+Type *Type_CreateComplex(Token *, ComplexType *);
 Type *Type_CreatePlaceholder(Token *);
-char *Type_Identifier(Type *);
-void Type_DestroyType(Type *);
+
+void Type_Destroy(Type *);
+
+const char *Type_Identifier(Type *);
+bool Type_Compare(Type *, Type *);
 
 #endif //LFLOW_TYPE_H

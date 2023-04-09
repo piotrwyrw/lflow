@@ -11,6 +11,6 @@ FunctionParameter *FunctionParameter_Create(Token *id, Token *type) {
 
 void FunctionParameter_Destroy(FunctionParameter *parameter) {
     Token_Destroy(parameter->id);
-    Type_DestroyType(parameter->type);
+    Type_Destroy(parameter->type);
     free(parameter);
 }

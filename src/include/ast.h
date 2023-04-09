@@ -58,9 +58,10 @@ typedef struct Node Node;
 
 struct Node {
     NodeType type;
+    Node *super;    // Semantic analysis: Super-scope
     union {
         struct {
-            Array *nodes;
+            Node *nodes;
         } program;
 
         // Literals
@@ -142,11 +143,11 @@ struct Node {
     } node;
 };
 
-Node *Node_CreateBase(NodeType);
+Node *Node_CreateBase(NodeType, Node *);
 
 void Node_DestroyBase(Node *);
 
-Node *Node_CreateProgram(Array *);
+Node *Node_CreateProgram(Node *);
 
 Node *Node_CreateStringLiteral(char *);
 
@@ -154,23 +155,23 @@ Node *Node_CreateIntegerLiteral(int);
 
 Node *Node_CreateFloatLiteral(float);
 
-Node *Node_CreateVariableDeclaration(Token *, Node *, Token *, ModificationQualifier);
+Node *Node_CreateVariableDeclaration(Token *, Node *, Token *, ModificationQualifier, Node *);
 
-Node *Node_CreateVariableAssignment(Token *, Node *);
+Node *Node_CreateVariableAssignment(Token *, Node *, Node *);
 
-Node *Node_CreateBinaryOperation(Node *, Node *, BinaryType);
+Node *Node_CreateBinaryOperation(Node *, Node *, BinaryType, Node *);
 
-Node *Node_CreateFunctionCall(Token *, Array *);
+Node *Node_CreateFunctionCall(Token *, Array *, Node *);
 
-Node *Node_CreateVariableReference(Token *);
+Node *Node_CreateVariableReference(Token *, Node *);
 
-Node *Node_CreateBlock(Array *);
+Node *Node_CreateBlock(Array *, Node *);
 
-Node *Node_CreateFunctionDefinition(Token *, Token *, Array *, Node *);
+Node *Node_CreateFunctionDefinition(Token *, Token *, Array *, Node *, Node *);
 
-Node *Node_CreateReturn(Node *);
+Node *Node_CreateReturn(Node *, Node *);
 
-Node *Node_CreateCheck(Node *, Node *, Node *);
+Node *Node_CreateCheck(Node *, Node *, Node *, Node *);
 
 void Node_DestroyRecurse(Node *);
 

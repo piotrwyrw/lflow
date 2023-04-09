@@ -18,6 +18,9 @@ typedef struct {
     Tokenizer *tokenizer;
     Token *current;
     Token *next;
+
+    Node *lastBlock;
+    Node *rootBlock;
 } Parser;
 
 typedef enum {

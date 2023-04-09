@@ -10,6 +10,7 @@ Parser *Parser_CreateParser(Tokenizer *tokenizer) {
     parser->tokenizer = tokenizer;
     parser->current = NULL;
     parser->next = NULL;
+    parser->lastBlock = NULL;
 
     Parser_Consume(parser);
     Parser_Consume(parser);
@@ -47,6 +48,9 @@ bool Parser_Compare(Parser *p, TokenDesignation td, TokenType tt, const char *st
 
 Node *Parser_ParseProgram(Parser *parser) {
     Array *arr = Array_Create();
+    Node *blk = Node_CreateBlock(arr, NULL);
+    parser->lastBlock = blk;
+    parser->rootBlock = blk;
 
     while (true) {
         if (Parser_Compare(parser, CURRENT, TT_UNKNOWN, NULL))
@@ -62,7 +66,7 @@ Node *Parser_ParseProgram(Parser *parser) {
         Array_Push(arr, n);
     }
 
-    return Node_CreateProgram(arr);
+    return Node_CreateProgram(blk);
 }
 
 Node *Parser_ParseNext(Parser *parser) {
@@ -137,7 +141,7 @@ Node *Parser_ParseVariableReference(Parser *parser) {
         SYNTAX_ERR("Expected identifier, got %s.\n", TokenType_String(parser->current->type));
         return NULL;
     }
-    Node *ref = Node_CreateVariableReference(parser->current);
+    Node *ref = Node_CreateVariableReference(parser->current, parser->lastBlock);
     Parser_Consume(parser); // SKip to the next token
     return ref;
 }
@@ -175,7 +179,7 @@ Node *Parser_ParseVariableAssignment(Parser *parser) {
 
     Parser_Consume(parser); // Skip ';'
 
-    Node *n = Node_CreateVariableAssignment(id, expr);
+    Node *n = Node_CreateVariableAssignment(id, expr, parser->lastBlock);
     Token_Destroy(id);
     return n;
 }
@@ -240,7 +244,7 @@ Node *Parser_ParseFunctionCall(Parser *parser) {
 
     Parser_Consume(parser); // SKip ')'
 
-    Node *fcall = Node_CreateFunctionCall(identifier, exprs);
+    Node *fcall = Node_CreateFunctionCall(identifier, exprs, parser->lastBlock);
     Token_Destroy(identifier);
 
     return fcall;
@@ -299,7 +303,7 @@ Node *Parser_ParseVariableDeclaration(Parser *parser) {
 
         Parser_Consume(parser); // Skip ';'
 
-        Node *n = Node_CreateVariableDeclaration(id, NULL, type, modQua);
+        Node *n = Node_CreateVariableDeclaration(id, NULL, type, modQua, parser->lastBlock);
 
         Token_Destroy(id);
         Token_Destroy(type);
@@ -336,7 +340,7 @@ Node *Parser_ParseVariableDeclaration(Parser *parser) {
 
     Parser_Consume(parser); // Skip ';'
 
-    Node *n = Node_CreateVariableDeclaration(id, expr, type, modQua);
+    Node *n = Node_CreateVariableDeclaration(id, expr, type, modQua, parser->lastBlock);
 
     Token_Destroy(id);
     Token_Destroy(type);
@@ -384,7 +388,7 @@ Node *Parser_ParseExpression(Parser *parser) {
         if (!right)
             return NULL;
 
-        left = Node_CreateBinaryOperation(left, right, type);
+        left = Node_CreateBinaryOperation(left, right, type, parser->lastBlock);
     }
 
     return left;
@@ -416,7 +420,7 @@ Node *Parser_ParseSecondDegree(Parser *parser) {
         if (!right)
             return NULL;
 
-        left = Node_CreateBinaryOperation(left, right, type);
+        left = Node_CreateBinaryOperation(left, right, type, parser->lastBlock);
     }
 
     return left;
@@ -491,7 +495,11 @@ Node *Parser_ParseBlock(Parser *parser) {
 
     Parser_Consume(parser); // Skip closing bracket
 
-    return Node_CreateBlock(blk);
+    Node *block = Node_CreateBlock(blk, parser->lastBlock);
+
+    parser->lastBlock = block;
+
+    return block;
 }
 
 // "procedure" identifier "(" (identifier ":" type [","]) ")" ":" type block
@@ -630,7 +638,7 @@ Node *Parser_ParseFunctionDefinition(Parser *parser) {
         return NULL;
     }
 
-    Node *fdef = Node_CreateFunctionDefinition(id, type, params, blk);
+    Node *fdef = Node_CreateFunctionDefinition(id, type, params, blk, parser->lastBlock);
     Token_Destroy(id);
     Token_Destroy(type);
 
@@ -647,7 +655,7 @@ Node *Parser_ParseReturn(Parser *parser) {
 
     if (Parser_Compare(parser, CURRENT, TT_SEMI, NULL)) {
         Parser_Consume(parser); // SKip ';'
-        return Node_CreateReturn(NULL);
+        return Node_CreateReturn(NULL, parser->lastBlock);
     }
 
     Node *expr = Parser_ParseExpression(parser);
@@ -663,7 +671,7 @@ Node *Parser_ParseReturn(Parser *parser) {
 
     Parser_Consume(parser); // Skip ';'
 
-    return Node_CreateReturn(expr);
+    return Node_CreateReturn(expr, parser->lastBlock);
 }
 
 Node *Parser_ParseCheck(Parser *parser) {
@@ -692,7 +700,7 @@ Node *Parser_ParseCheck(Parser *parser) {
         return NULL;
     }
 
-    Node *check = Node_CreateCheck(chk, blk, NULL);
+    Node *check = Node_CreateCheck(chk, blk, NULL, parser->lastBlock);
     Node *root = check;
 
     bool flag = true; // false - The final 'otherwise' had already been commited
@@ -757,7 +765,7 @@ Node *Parser_ParseCheck(Parser *parser) {
         }
 
         // Create the sub-check
-        Node *subchk = Node_CreateCheck(expr, otherwise_blk, NULL);
+        Node *subchk = Node_CreateCheck(expr, otherwise_blk, NULL, parser->lastBlock);
         check->node.check.sub = subchk;
         check = subchk;
     }

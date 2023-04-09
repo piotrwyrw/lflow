@@ -86,9 +86,10 @@ const char *ModificationQualifier_String(ModificationQualifier modQua) {
 
 #undef CASE
 
-Node *Node_CreateBase(NodeType type) {
+Node *Node_CreateBase(NodeType type, Node *super) {
     Node *node = malloc(sizeof(Node));
     node->type = type;
+    node->super = super;
     return node;
 }
 
@@ -96,33 +97,33 @@ void Node_DestroyBase(Node *node) {
     free(node);
 }
 
-Node *Node_CreateProgram(Array *arr) {
-    Node *n = Node_CreateBase(NODE_PROGRAM);
-    n->node.program.nodes = arr;
+Node *Node_CreateProgram(Node *blk) {
+    Node *n = Node_CreateBase(NODE_PROGRAM, NULL);
+    n->node.program.nodes = blk;
     return n;
 }
 
 Node *Node_CreateStringLiteral(char *str) {
-    Node *n = Node_CreateBase(NODE_STRING_LITERAL);
+    Node *n = Node_CreateBase(NODE_STRING_LITERAL, NULL);
     n->node.str_lit.str = malloc(strlen(str) + 1);
     strcpy(n->node.str_lit.str, str);
     return n;
 }
 
 Node *Node_CreateIntegerLiteral(int i) {
-    Node *n = Node_CreateBase(NODE_INTEGER_LITERAL);
+    Node *n = Node_CreateBase(NODE_INTEGER_LITERAL, NULL);
     n->node.int_lit.n = i;
     return n;
 }
 
 Node *Node_CreateFloatLiteral(float f) {
-    Node *n = Node_CreateBase(NODE_FLOAT_LITERAL);
+    Node *n = Node_CreateBase(NODE_FLOAT_LITERAL, NULL);
     n->node.float_lit.f = f;
     return n;
 }
 
-Node *Node_CreateVariableDeclaration(Token *id, Node *value, Token *type, ModificationQualifier modQua) {
-    Node *n = Node_CreateBase(NODE_VARIABLE_DECLARATION);
+Node *Node_CreateVariableDeclaration(Token *id, Node *value, Token *type, ModificationQualifier modQua, Node *super) {
+    Node *n = Node_CreateBase(NODE_VARIABLE_DECLARATION, super);
     n->node.var_decl.defined = value != NULL;
     n->node.var_decl.value = value;
     n->node.var_decl.id = Token_Dup(id);
@@ -131,36 +132,36 @@ Node *Node_CreateVariableDeclaration(Token *id, Node *value, Token *type, Modifi
     return n;
 }
 
-Node *Node_CreateVariableAssignment(Token *id, Node *value) {
-    Node *n = Node_CreateBase(NODE_VARIABLE_ASSIGNMENT);
+Node *Node_CreateVariableAssignment(Token *id, Node *value, Node *super) {
+    Node *n = Node_CreateBase(NODE_VARIABLE_ASSIGNMENT, super);
     n->node.var_assign.id = Token_Dup(id);
     n->node.var_assign.value = value;
     return n;
 }
 
-Node *Node_CreateBinaryOperation(Node *left, Node *right, BinaryType type) {
-    Node *n = Node_CreateBase(NODE_BINARY_EXPRESSION);
+Node *Node_CreateBinaryOperation(Node *left, Node *right, BinaryType type, Node *super) {
+    Node *n = Node_CreateBase(NODE_BINARY_EXPRESSION, super);
     n->node.binary.left = left;
     n->node.binary.right = right;
     n->node.binary.op = type;
     return n;
 }
 
-Node *Node_CreateFunctionCall(Token *id, Array *xprs) {
-    Node *n = Node_CreateBase(NODE_FUNCTION_CALL);
+Node *Node_CreateFunctionCall(Token *id, Array *xprs, Node *super) {
+    Node *n = Node_CreateBase(NODE_FUNCTION_CALL, super);
     n->node.fcall.id = Token_Dup(id);
     n->node.fcall.exprs = xprs;
     return n;
 }
 
-Node *Node_CreateVariableReference(Token *id) {
-    Node *n = Node_CreateBase(NODE_VARIABLE_REFERENCE);
+Node *Node_CreateVariableReference(Token *id, Node *super) {
+    Node *n = Node_CreateBase(NODE_VARIABLE_REFERENCE, super);
     n->node.var_ref.id = Token_Dup(id);
     return n;
 }
 
-Node *Node_CreateBlock(Array *arr) {
-    Node *n = Node_CreateBase(NODE_BLOCK);
+Node *Node_CreateBlock(Array *arr, Node *super) {
+    Node *n = Node_CreateBase(NODE_BLOCK, super);
     n->node.block.nodes = arr;
     n->node.block.sub = NULL;
     n->node.block.super = NULL;
@@ -168,8 +169,8 @@ Node *Node_CreateBlock(Array *arr) {
     return n;
 }
 
-Node *Node_CreateFunctionDefinition(Token *id, Token *type, Array *params, Node *blk) {
-    Node *n = Node_CreateBase(NODE_FUNCTION_DEFINITION);
+Node *Node_CreateFunctionDefinition(Token *id, Token *type, Array *params, Node *blk, Node *super) {
+    Node *n = Node_CreateBase(NODE_FUNCTION_DEFINITION, super);
     n->node.func_def.id = Token_Dup(id);
     n->node.func_def.type = Type_CreatePlaceholder(type);
     n->node.func_def.params = params;
@@ -177,14 +178,14 @@ Node *Node_CreateFunctionDefinition(Token *id, Token *type, Array *params, Node 
     return n;
 }
 
-Node *Node_CreateReturn(Node *expr) {
-    Node *n = Node_CreateBase(NODE_RETURN);
+Node *Node_CreateReturn(Node *expr, Node *super) {
+    Node *n = Node_CreateBase(NODE_RETURN, super);
     n->node.ret.expr = expr;
     return n;
 }
 
-Node *Node_CreateCheck(Node *expr, Node *block, Node *sub) {
-    Node *n = Node_CreateBase(NODE_CHECK);
+Node *Node_CreateCheck(Node *expr, Node *block, Node *sub, Node *super) {
+    Node *n = Node_CreateBase(NODE_CHECK, super);
     n->node.check.expr = expr;
     n->node.check.block = block;
     n->node.check.sub = sub;
@@ -199,12 +200,12 @@ void Node_DestroyRecurse(Node *node) {
     switch (node->type) {
 
         case NODE_PROGRAM:
-            Array_DestroyCallBack(node->node.program.nodes, (void *) Node_DestroyRecurse);
+            Node_DestroyRecurse(node->node.program.nodes);
             break;
 
         case NODE_VARIABLE_DECLARATION:
             Token_Destroy(node->node.var_decl.id);
-            Type_DestroyType(node->node.var_decl.type);
+            Type_Destroy(node->node.var_decl.type);
             Node_DestroyRecurse(node->node.var_decl.value);
             break;
 
@@ -242,7 +243,7 @@ void Node_DestroyRecurse(Node *node) {
 
         case NODE_FUNCTION_DEFINITION:
             Token_Destroy(node->node.func_def.id);
-            Type_DestroyType(node->node.func_def.type);
+            Type_Destroy(node->node.func_def.type);
             Array_DestroyCallBack(node->node.func_def.params, (void *) FunctionParameter_Destroy);
             Node_DestroyRecurse(node->node.func_def.block);
             break;
@@ -281,8 +282,7 @@ void Node_Print(unsigned depth, Node *node) {
         case NODE_PROGRAM:
         OUTPUT("Program\n");
             depth++;
-            for (int i = 0; i < node->node.program.nodes->length; i++)
-                Node_Print(depth, node->node.program.nodes->base[i]);
+            Node_Print(depth, node->node.program.nodes);
             depth--;
             break;
         case NODE_STRING_LITERAL:

@@ -1,59 +1,116 @@
-//
-// Created by pwpio on 08/04/2023.
-//
 
 #include "include/type.h"
 
 #include <stdlib.h>
+#include <string.h>
 
-#define CASE(a) case a: return #a;
+#define CASE(x, y) case x: return y;
 
-const char *BuiltinType_ToString(BuiltinType type) {
+const char *PrimitiveType_String(PrimitiveType type) {
     switch (type) {
-        CASE(BT_INTEGER)
-        CASE(BT_REAL)
-        CASE(BT_VOID)
+        CASE(PRIMITIVE_INT8, "int8");
+        CASE(PRIMITIVE_INT16, "int16");
+        CASE(PRIMITIVE_INT32, "int32");
+        CASE(PRIMITIVE_INT64, "int64");
+        default:
+            return "Unknown type";
     }
 }
 
 #undef CASE
 
-Type *Type_CreateBuiltin(BuiltinType bt) {
-    Type *t = malloc(sizeof(Type));
-    t->kind = TYPE_BUILTIN;
-    t->type.builtin.type = bt;
-    return t;
+ComplexField *ComplexField_Create(Token *id, Type *type) {
+    ComplexField *field = malloc(sizeof(ComplexField));
+    field->id = Token_Dup(id);
+    field->type = type;
+    return field;
 }
 
-Type *Type_CreateDefined(Token *token) {
-    Type *t = malloc(sizeof(Type));
-    t->kind = TYPE_DEFINED;
-    t->type.defined.lookupId = Token_Dup(token);
-    return t;
+void ComplexField_Destroy(ComplexField *field) {
+    Token_Destroy(field->id);
+    free(field);
 }
 
-Type *Type_CreatePlaceholder(Token *type) {
-    Type *t = malloc(sizeof(Type));
-    t->kind = TYPE_PLACEHOLDER;
-    t->type.placeholder.id = Token_Dup(type);
-    return t;
+ComplexType *ComplexType_Create(Token *id, Array *fields) {
+    ComplexType *type = malloc(sizeof(ComplexType));
+    type->id = Token_Dup(id);
+    type->fields = fields;
+    return type;
 }
 
-char *Type_Identifier(Type *type) {
-    switch (type->kind) {
-        case TYPE_PLACEHOLDER:
-            return type->type.placeholder.id->value;
-        case TYPE_DEFINED:
-            return type->type.defined.lookupId->value;
-        case TYPE_BUILTIN:
-            return BuiltinType_ToString(type->type.builtin.type);
-    }
-}
-
-void Type_DestroyType(Type *type) {
-    if (type->kind == TYPE_DEFINED)
-        Token_Destroy(type->type.defined.lookupId);
-    if (type->kind == TYPE_PLACEHOLDER)
-        Token_Destroy(type->type.placeholder.id);
+void ComplexType_Destroy(ComplexType *type) {
+    Token_Destroy(type->id);
+    Array_DestroyCallBack(type->fields, (void *) ComplexField_Destroy);
     free(type);
+}
+
+Type *Type_CreateVoid() {
+    Type *type = malloc(sizeof(Type));
+    type->type = TYPE_VOID;
+    return type;
+}
+
+Type *Type_CreatePrimitive(PrimitiveType type) {
+    Type *t = malloc(sizeof(Type));
+    t->type = TYPE_PRIMITIVE;
+    t->content.primitive.type = type;
+    return t;
+}
+
+Type *Type_CreateComplex(Token *id, ComplexType *t) {
+    Type *type = malloc(sizeof(Type));
+    type->type = TYPE_COMPLEX;
+    type->content.complx.ref = t;
+    type->content.complx.id = Token_Dup(id);
+    return type;
+}
+
+Type *Type_CreatePlaceholder(Token *id) {
+    Type *type = malloc(sizeof(Type));
+    type->type = TYPE_PLACEHOLDER;
+    type->content.placeholder.id = Token_Dup(id);
+    return type;
+}
+
+void Type_Destroy(Type *type) {
+    if (type->type == TYPE_COMPLEX)
+        Token_Destroy(type->content.complx.id);
+
+    if (type->type == TYPE_PLACEHOLDER)
+        Token_Destroy(type->content.placeholder.id);
+
+    free(type);
+}
+
+const char *Type_Identifier(Type *type) {
+    if (type->type == TYPE_VOID)
+        return "void";
+
+    if (type->type == TYPE_COMPLEX)
+        return type->content.complx.id->value;
+
+    if (type->type == TYPE_PRIMITIVE)
+        return PrimitiveType_String(type->content.primitive.type);
+
+    if (type->type == TYPE_PLACEHOLDER)
+        return type->content.placeholder.id->value;
+}
+
+bool Type_Compare(Type *a, Type *b) {
+    if (a->type != b->type)
+        return false;
+
+    if (a->type == TYPE_PRIMITIVE)
+        return a->content.primitive.type == b->content.primitive.type;
+
+    if (a->type == TYPE_COMPLEX)
+        return strcmp(a->content.complx.id->value, b->content.complx.id->value) == 0;
+
+    if (a->type == TYPE_PLACEHOLDER)
+        return strcmp(a->content.placeholder.id->value, b->content.placeholder.id->value) == 0;
+
+    if (a->type == TYPE_VOID)
+        return true;
+
+    return false;
 }
