@@ -9,8 +9,8 @@
 #include "ast.h"
 #include "status.h"
 
-#define SEMANTIC_ERROR(...) \
-        printf("Semantic Analysis Failed: "); \
+#define SEMANTIC_PRINT(...) \
+        printf("[Notamide]: "); \
         printf(__VA_ARGS__);
 
 typedef struct {
@@ -21,6 +21,8 @@ typedef struct {
 
 SemanticAnalysis *SemanticAnalysis_Create(Node *);
 void SemanticAnalysis_Destroy(SemanticAnalysis *);
+
+PrimitiveType PrimitiveType_FitInteger(int);
 
 Status SemanticAnalysis_RunAnalysis(SemanticAnalysis *);
 

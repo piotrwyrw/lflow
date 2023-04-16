@@ -17,6 +17,13 @@ const char *NodeType_ToString(NodeType type) {
         CASE(NODE_VARIABLE_DECLARATION);
         CASE(NODE_VARIABLE_ASSIGNMENT);
         CASE(NODE_FUNCTION_CALL);
+        CASE(NODE_FUNCTION_DEFINITION);
+        CASE(NODE_RETURN);
+        CASE(NODE_CHECK);
+        CASE(NODE_BLOCK);
+        CASE(NODE_VARIABLE_REFERENCE);
+        CASE(NODE_BINARY_EXPRESSION);
+        CASE(NODE_EXPR_WRAPPER);
 
         default:
             return "(Unknown Node Type)";
@@ -192,6 +199,16 @@ Node *Node_CreateCheck(Node *expr, Node *block, Node *sub, Node *super) {
     return n;
 }
 
+Node *Node_CreateExpressionWrapper(Node *expr, bool defined, Type *t, Node *super) {
+    Node *n = Node_CreateBase(NODE_EXPR_WRAPPER, super);
+    n->node.expr_wrap.expr = expr;
+    n->node.expr_wrap.defined = defined;
+    n->node.expr_wrap.type = t;
+    return n;
+}
+
+#define CANFREE(t) (t->type == TYPE_PLACEHOLDER || t->type == TYPE_VOID)
+
 void Node_DestroyRecurse(Node *node) {
 
     if (!node)
@@ -205,7 +222,9 @@ void Node_DestroyRecurse(Node *node) {
 
         case NODE_VARIABLE_DECLARATION:
             Token_Destroy(node->node.var_decl.id);
-            Type_Destroy(node->node.var_decl.type);
+            if (CANFREE(node->node.var_decl.type)) {
+                Type_Destroy(node->node.var_decl.type);
+            }
             Node_DestroyRecurse(node->node.var_decl.value);
             break;
 
@@ -230,6 +249,8 @@ void Node_DestroyRecurse(Node *node) {
 
         case NODE_VARIABLE_REFERENCE:
             Token_Destroy(node->node.var_ref.id);
+            if (node->node.var_ref.next)
+                Node_DestroyRecurse(node->node.var_ref.next);
             break;
 
         case NODE_BLOCK:
@@ -243,7 +264,9 @@ void Node_DestroyRecurse(Node *node) {
 
         case NODE_FUNCTION_DEFINITION:
             Token_Destroy(node->node.func_def.id);
-            Type_Destroy(node->node.func_def.type);
+            if (CANFREE(node->node.func_def.type)) {
+                Type_Destroy(node->node.func_def.type);
+            }
             Array_DestroyCallBack(node->node.func_def.params, (void *) FunctionParameter_Destroy);
             Node_DestroyRecurse(node->node.func_def.block);
             break;
@@ -256,6 +279,10 @@ void Node_DestroyRecurse(Node *node) {
             Node_DestroyRecurse(node->node.check.expr);
             Node_DestroyRecurse(node->node.check.block);
             Node_DestroyRecurse(node->node.check.sub);
+            break;
+
+        case NODE_EXPR_WRAPPER:
+            Node_DestroyRecurse(node->node.expr_wrap.expr);
             break;
 
     }
@@ -364,6 +391,10 @@ void Node_Print(unsigned depth, Node *node) {
         OUTPUT("Variable reference\n");
             depth++;
             OUTPUT("Identifier: %s\n", node->node.var_ref.id->value);
+            OUTPUT("Next\n");
+            depth ++;
+            
+            depth --;
             depth--;
             break;
         case NODE_BLOCK:
@@ -426,6 +457,13 @@ void Node_Print(unsigned depth, Node *node) {
                 Node_Print(depth, node->node.check.sub);
                 depth--;
             }
+            break;
+        case NODE_EXPR_WRAPPER:
+            OUTPUT("Expression wrapper\n");
+            depth ++;
+            OUTPUT("Target type: %s\n", Type_Identifier(node->node.expr_wrap.type));
+            Node_Print(depth, node->node.expr_wrap.expr);
+            depth --;
             break;
         default:
         OUTPUT("\\(Undefined Node\\)\n");

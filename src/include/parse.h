@@ -7,7 +7,7 @@
 #include "ast.h"
 
 #define SYNTAX_ERR(...) \
-        printf("Syntax Error: "); \
+        printf("[Natron] "); \
         printf(__VA_ARGS__);
 
 #define WARN(...) \

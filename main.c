@@ -4,6 +4,7 @@
 #include "src/include/tokenizer.h"
 #include "src/include/io.h"
 #include "src/include/parse.h"
+#include "src/include/semantic.h"
 
 int main(void) {
     char *str = read_file("main.flow");
@@ -22,20 +23,25 @@ int main(void) {
 
     Node *n = Parser_ParseProgram(parser);
 
+    Tokenizer_Destroy(tokenizer);
+
     if (n) {
+        printf("[Natron] Syntactic analysis successful.\n");
         Node_Print(0, n);
+        SemanticAnalysis *sa = SemanticAnalysis_Create(n);
+        if (SemanticAnalysis_RunAnalysis(sa) == STATUS_FAIL) {
+            printf("[Notamide] Semantic analysis failed.\n");
+        } else {
+            printf("[Notamide] Semantic analysis OK.\n");
+        }
+
         Node_DestroyRecurse(n);
+        SemanticAnalysis_Destroy(sa);
+    } else {
+        printf("[Natron] Parsing failed.\n");
     }
 
     Parser_DestroyParser(parser);
-
-//    while (Tokenizer_HasNext(tokenizer)) {
-//        if (!Tokenizer_Next(tokenizer))
-//            break;
-//        printf("[%s]\n", tokenizer->current->value);
-//    }
-
-    Tokenizer_Destroy(tokenizer);
 
     free(primed);
 

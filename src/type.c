@@ -8,10 +8,10 @@
 
 const char *PrimitiveType_String(PrimitiveType type) {
     switch (type) {
-        CASE(PRIMITIVE_INT8, "int8");
-        CASE(PRIMITIVE_INT16, "int16");
-        CASE(PRIMITIVE_INT32, "int32");
-        CASE(PRIMITIVE_INT64, "int64");
+        CASE(PRIMITIVE_BYTE, "byte");
+        CASE(PRIMITIVE_WORD, "word");
+        CASE(PRIMITIVE_DWORD, "dword");
+        CASE(PRIMITIVE_QWORD, "qword");
         default:
             return "Unknown type";
     }
@@ -39,6 +39,9 @@ ComplexType *ComplexType_Create(Token *id, Array *fields) {
 }
 
 void ComplexType_Destroy(ComplexType *type) {
+    if (!type)
+        return;
+
     Token_Destroy(type->id);
     Array_DestroyCallBack(type->fields, (void *) ComplexField_Destroy);
     free(type);
@@ -73,16 +76,33 @@ Type *Type_CreatePlaceholder(Token *id) {
 }
 
 void Type_Destroy(Type *type) {
-    if (type->type == TYPE_COMPLEX)
-        Token_Destroy(type->content.complx.id);
-
     if (type->type == TYPE_PLACEHOLDER)
         Token_Destroy(type->content.placeholder.id);
+
+    if (type->type == TYPE_COMPLEX)
+        Token_Destroy(type->content.complx.id);
 
     free(type);
 }
 
+void Type_DestroyHard(Type *type) {
+    if (type->type == TYPE_PLACEHOLDER || type->type == TYPE_PRIMITIVE || type->type == TYPE_VOID) {
+        Type_Destroy(type);
+        return;
+    }
+
+    if (type->type == TYPE_COMPLEX) {
+        ComplexType_Destroy(type->content.complx.ref);
+        Token_Destroy(type->content.complx.id);
+        return;
+    }
+
+}
+
 const char *Type_Identifier(Type *type) {
+    if (!type)
+        return "(none)";
+
     if (type->type == TYPE_VOID)
         return "void";
 
@@ -113,4 +133,28 @@ bool Type_Compare(Type *a, Type *b) {
         return true;
 
     return false;
+}
+
+int Type_Quantify(Type *t) {
+    if (t->type != TYPE_PRIMITIVE)
+        return -1;
+
+    switch (t->content.primitive.type) {
+        case PRIMITIVE_BYTE:
+            return 8;
+        case PRIMITIVE_WORD:
+            return 16;
+        case PRIMITIVE_DWORD:
+            return 32;
+        case PRIMITIVE_QWORD:
+            return 64;
+    }
+}
+
+Type *Type_Larger(Type *a, Type *b) {
+    int tA = Type_Quantify(a);
+    int tB = Type_Quantify(b);
+    if (tA < 0 || tB < 0)
+        return NULL;
+    return ((tA > tB) ? a : b);
 }

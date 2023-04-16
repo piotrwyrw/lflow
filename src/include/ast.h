@@ -19,7 +19,8 @@ typedef enum {
     NODE_BLOCK,
     NODE_FUNCTION_DEFINITION,
     NODE_RETURN,
-    NODE_CHECK
+    NODE_CHECK,
+    NODE_EXPR_WRAPPER
 } NodeType;
 
 const char *NodeType_ToString(NodeType);
@@ -108,6 +109,7 @@ struct Node {
         // Variable reference
         struct {
             Token *id;
+            Node *next;
         } var_ref;
 
         // Compound / Block statement
@@ -139,6 +141,13 @@ struct Node {
             Node *block;
             Node *sub;
         } check;
+
+        // Expression wrapper
+        struct {
+            Node *expr;
+            bool defined;
+            Type *type;
+        } expr_wrap;
 
     } node;
 };
@@ -172,6 +181,8 @@ Node *Node_CreateFunctionDefinition(Token *, Token *, Array *, Node *, Node *);
 Node *Node_CreateReturn(Node *, Node *);
 
 Node *Node_CreateCheck(Node *, Node *, Node *, Node *);
+
+Node *Node_CreateExpressionWrapper(Node *, bool, Type *, Node *);
 
 void Node_DestroyRecurse(Node *);
 

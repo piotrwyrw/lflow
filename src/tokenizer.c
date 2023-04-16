@@ -22,6 +22,10 @@ void Tokenizer_Destroy(Tokenizer *tokenizer) {
     free(tokenizer);
 }
 
+#define TOK_ERR(...) \
+        printf("[Deltamide] "); \
+        printf(__VA_ARGS__);
+
 #define LAST_IDX ((tokenizer->ix + 1 > tokenizer->length))
 #define NCLASS ((type == TT_UNKNOWN))
 #define LETTER(c) ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || c == '_')
@@ -61,7 +65,7 @@ Status Tokenizer_Next(Tokenizer *tokenizer) {
         if (str) {
             XString_Append(buffer, c);
             if (LAST_IDX) {
-                printf("Unclosed string literal.");
+                TOK_ERR("Unclosed string literal.\n");
                 FAIL;
             }
             continue;
@@ -92,7 +96,7 @@ Status Tokenizer_Next(Tokenizer *tokenizer) {
 
                 // If the classification has failed, just fail.
                 if (tt == TT_UNKNOWN) {
-                    printf("Failed to classify leading character '%c'.\n", c);
+                    TOK_ERR("Failed to classify leading character '%c'.\n", c);
                     FAIL;
                 }
 
@@ -162,7 +166,7 @@ Status Tokenizer_Next(Tokenizer *tokenizer) {
         tokenizer->ix++;
 
         if (XString_Last(buffer) == '.') {
-            printf("Float literal must not end with a dot (.)\n");
+            TOK_ERR("Float literal must not end with a dot (.)\n");
             FAIL;
         }
 

@@ -19,10 +19,10 @@ typedef enum {
 } TypeClass;
 
 typedef enum {
-    PRIMITIVE_INT8,
-    PRIMITIVE_INT16,
-    PRIMITIVE_INT32,
-    PRIMITIVE_INT64
+    PRIMITIVE_BYTE,
+    PRIMITIVE_WORD,
+    PRIMITIVE_DWORD,
+    PRIMITIVE_QWORD
 } PrimitiveType;
 
 const char *PrimitiveType_String(PrimitiveType);
@@ -33,6 +33,7 @@ typedef struct {
 } ComplexField;
 
 ComplexField *ComplexField_Create(Token *, Type *);
+
 void ComplexField_Destroy(ComplexField *);
 
 typedef struct {
@@ -41,6 +42,7 @@ typedef struct {
 } ComplexType;
 
 ComplexType *ComplexType_Create(Token *, Array *);
+
 void ComplexType_Destroy(ComplexType *);
 
 struct Type {
@@ -66,13 +68,22 @@ struct Type {
 };
 
 Type *Type_CreateVoid();
+
 Type *Type_CreatePrimitive(PrimitiveType);
+
 Type *Type_CreateComplex(Token *, ComplexType *);
+
 Type *Type_CreatePlaceholder(Token *);
 
 void Type_Destroy(Type *);
+void Type_DestroyHard(Type *);
 
 const char *Type_Identifier(Type *);
+
 bool Type_Compare(Type *, Type *);
+
+int Type_Quantify(Type *);
+
+Type *Type_Larger(Type *, Type *);
 
 #endif //LFLOW_TYPE_H
