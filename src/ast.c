@@ -207,6 +207,12 @@ Node *Node_CreateExpressionWrapper(Node *expr, bool defined, Type *t, Node *supe
     return n;
 }
 
+Node *Node_CreateSize(Type *type, Node *super) {
+    Node *n = Node_CreateBase(NODE_SIZE, super);
+    n->node.size.type = type;
+    return n;
+}
+
 #define CANFREE(t) (t->type == TYPE_PLACEHOLDER || t->type == TYPE_VOID)
 
 void Node_DestroyRecurse(Node *node) {
@@ -285,6 +291,11 @@ void Node_DestroyRecurse(Node *node) {
             Node_DestroyRecurse(node->node.expr_wrap.expr);
             break;
 
+        case NODE_SIZE:
+            if (CANFREE(node->node.size.type)) {
+                Type_Destroy(node->node.size.type);
+            }
+            break;
     }
 
     Node_DestroyBase(node);
@@ -464,6 +475,9 @@ void Node_Print(unsigned depth, Node *node) {
             OUTPUT("Target type: %s\n", Type_Identifier(node->node.expr_wrap.type));
             Node_Print(depth, node->node.expr_wrap.expr);
             depth --;
+            break;
+        case NODE_SIZE:
+            OUTPUT("Size: %s\n", Type_Identifier(node->node.size.type));
             break;
         default:
         OUTPUT("\\(Undefined Node\\)\n");

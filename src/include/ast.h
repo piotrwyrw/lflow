@@ -20,7 +20,8 @@ typedef enum {
     NODE_FUNCTION_DEFINITION,
     NODE_RETURN,
     NODE_CHECK,
-    NODE_EXPR_WRAPPER
+    NODE_EXPR_WRAPPER,
+    NODE_SIZE
 } NodeType;
 
 const char *NodeType_ToString(NodeType);
@@ -44,6 +45,7 @@ typedef enum {
 } BinaryType;
 
 const char *BinaryType_ToString(BinaryType);
+
 BinaryType BinaryType_FromTokenType(TokenType);
 
 typedef enum {
@@ -53,6 +55,7 @@ typedef enum {
 } ModificationQualifier;
 
 ModificationQualifier ModificationQualifier_FromTokenType(TokenType);
+
 const char *ModificationQualifier_String(ModificationQualifier);
 
 typedef struct Node Node;
@@ -149,6 +152,11 @@ struct Node {
             Type *type;
         } expr_wrap;
 
+        // Size directive
+        struct {
+            Type *type;
+        } size;
+
     } node;
 };
 
@@ -183,6 +191,8 @@ Node *Node_CreateReturn(Node *, Node *);
 Node *Node_CreateCheck(Node *, Node *, Node *, Node *);
 
 Node *Node_CreateExpressionWrapper(Node *, bool, Type *, Node *);
+
+Node *Node_CreateSize(Type *, Node *);
 
 void Node_DestroyRecurse(Node *);
 

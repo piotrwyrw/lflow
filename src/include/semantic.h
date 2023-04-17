@@ -10,7 +10,7 @@
 #include "status.h"
 
 #define SEMANTIC_PRINT(...) \
-        printf("[Notamide]: "); \
+        printf("Notamide -> "); \
         printf(__VA_ARGS__);
 
 typedef struct {

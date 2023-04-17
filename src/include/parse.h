@@ -7,7 +7,7 @@
 #include "ast.h"
 
 #define SYNTAX_ERR(...) \
-        printf("[Natron] "); \
+        printf("Natron -> "); \
         printf(__VA_ARGS__);
 
 #define WARN(...) \
@@ -55,5 +55,6 @@ Node *Parser_ParseBlock(Parser *);
 Node *Parser_ParseFunctionDefinition(Parser *);
 Node *Parser_ParseReturn(Parser *);
 Node *Parser_ParseCheck(Parser *);
+Node *Parser_ParseSize(Parser *);
 
 #endif

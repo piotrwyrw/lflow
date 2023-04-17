@@ -49,6 +49,7 @@ bool Parser_Compare(Parser *p, TokenDesignation td, TokenType tt, const char *st
 Node *Parser_ParseProgram(Parser *parser) {
     Array *arr = Array_Create();
     Node *blk = Node_CreateBlock(arr, NULL);
+
     parser->lastBlock = blk;
     parser->rootBlock = blk;
 
@@ -60,6 +61,7 @@ Node *Parser_ParseProgram(Parser *parser) {
 
         if (n == NULL) {
             Array_DestroyCallBack(arr, (void *) Node_DestroyRecurse);
+            Node_DestroyRecurse(blk);
             return NULL;
         }
 
@@ -97,8 +99,7 @@ Node *Parser_ParseNext(Parser *parser) {
 
     if (!Parser_Compare(parser, CURRENT, TT_SEMI, NULL)) {
         SYNTAX_ERR("Expected ';' after expression.\n");
-        if (n)
-            Node_DestroyRecurse(n);
+        Node_DestroyRecurse(n);
         return NULL;
     }
 
@@ -427,6 +428,11 @@ Node *Parser_ParseSecondDegree(Parser *parser) {
 }
 
 Node *Parser_ParseAtom(Parser *parser) {
+
+    // Size directive
+    if (Parser_Compare(parser, CURRENT, TT_KW_SIZE, NULL)) {
+        return Parser_ParseSize(parser);
+    }
 
     // Sub-expression
     if (Parser_Compare(parser, CURRENT, TT_LPAREN, NULL)) {
@@ -771,4 +777,38 @@ Node *Parser_ParseCheck(Parser *parser) {
     }
 
     return root;
+}
+
+Node *Parser_ParseSize(Parser *parser) {
+    if (!Parser_Compare(parser, CURRENT, TT_KW_SIZE, NULL)) {
+        SYNTAX_ERR("Expected 'size' keyword at the beginning of a size directive, got %s.\n", TokenType_String(parser->current->type));
+        return NULL;
+    }
+
+    Parser_Consume(parser);
+
+    if (!Parser_Compare(parser, CURRENT, TT_LSBRACKET, NULL)) {
+        SYNTAX_ERR("Expected '[' after 'size' keyword, got %s.\n", TokenType_String(parser->current->type));
+        return NULL;
+    }
+
+    Parser_Consume(parser);
+
+    if (!Parser_Compare(parser, CURRENT, TT_IDEN, NULL)) {
+        SYNTAX_ERR("Expected size identifier after '[', got %s.\n", TokenType_String(parser->current->type));
+        return NULL;
+    }
+
+    Type *t = Type_CreatePlaceholder(parser->current);
+
+    Parser_Consume(parser);
+
+    if (!Parser_Compare(parser, CURRENT, TT_RSBRACKET, NULL)) {
+        SYNTAX_ERR("Expected ']' after type identifier '%s', got %s.\n", Type_Identifier(t), TokenType_String(parser->current->type));
+        return NULL;
+    }
+
+    Parser_Consume(parser);
+
+    return Node_CreateSize(t, parser->lastBlock);
 }

@@ -2,8 +2,8 @@
 #define LFLOW_STATUS_H
 
 typedef enum {
-    STATUS_OK = 1,
-    STATUS_FAIL = 0
+    STATUS_FAIL,
+    STATUS_OK
 } Status;
 
 #endif

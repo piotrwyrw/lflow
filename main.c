@@ -26,19 +26,19 @@ int main(void) {
     Tokenizer_Destroy(tokenizer);
 
     if (n) {
-        printf("[Natron] Syntactic analysis successful.\n");
+        printf("Natron -> Syntactic analysis successful.\n");
         Node_Print(0, n);
         SemanticAnalysis *sa = SemanticAnalysis_Create(n);
         if (SemanticAnalysis_RunAnalysis(sa) == STATUS_FAIL) {
-            printf("[Notamide] Semantic analysis failed.\n");
+            printf("Notamide -> Semantic analysis failed.\n");
         } else {
-            printf("[Notamide] Semantic analysis OK.\n");
+            printf("Notamide -> Semantic analysis OK.\n");
         }
 
         Node_DestroyRecurse(n);
         SemanticAnalysis_Destroy(sa);
     } else {
-        printf("[Natron] Parsing failed.\n");
+        printf("Natron -> Parsing failed.\n");
     }
 
     Parser_DestroyParser(parser);

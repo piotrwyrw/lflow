@@ -7,8 +7,15 @@
 int stoi(char *str) {
     int rslt = 0;
 
-    for (unsigned int i = 0; i < strlen(str); i ++)
+    for (unsigned int i = 0; i < strlen(str); i ++) {
+        int old = rslt;
         rslt = rslt * 10 + ctoi(str[i]);
+
+        // Check for arithmetic overflow
+        if (rslt < old) {
+            // TODO Procrastination my friend
+        }
+    }
 
     return rslt;
 }

@@ -5,12 +5,6 @@
 #include <string.h>
 #include <math.h>
 
-/**
- *  ==351== 40 (24 direct, 16 indirect) bytes in 1 blocks are definitely lost in loss record 3 of 3
- ^  ==351==    at 0x4848899: malloc (in /usr/libexec/valgrind/vgpreload_memcheck-amd64-linux.so)
- ^  ==351==    by 0x10F8F2: SemanticAnalysis_Create (in /mnt/c/Users/pwpio/CLionProjects/lflow/wsl/lflow)
- ^  ==351==    by 0x10A461: main (in /mnt/c/Users/pwpio/CLionProjects/lflow/wsl/lflow)
- */
 SemanticAnalysis *SemanticAnalysis_Create(Node *program) {
     SemanticAnalysis *sa = malloc(sizeof(SemanticAnalysis));
     sa->program = program;
@@ -49,6 +43,20 @@ PrimitiveType PrimitiveType_FitInteger(int n) {
 Status SemanticAnalysis_AnalyseNode(SemanticAnalysis *, Node *);
 
 Type *SemanticAnalysis_AnalyseExpression(SemanticAnalysis *analysis, Node *expr) {
+    if (expr->type == NODE_EXPR_WRAPPER) {
+        Type *t = SemanticAnalysis_AnalyseExpression(analysis, expr->node.expr_wrap.expr);
+        if (!t)
+            return NULL;
+        if (expr->node.expr_wrap.defined) {
+            if (Type_Compare(t, expr->node.expr_wrap.type)) {
+                SEMANTIC_PRINT("The binary expression is expected to output '%s', yet it yields a '%s'.\n",
+                               Type_Identifier(expr->node.expr_wrap.type),
+                               Type_Identifier(t));
+                return NULL;
+            }
+        }
+        return t;
+    }
     if (expr->type == NODE_BINARY_EXPRESSION) {
         Type *left = SemanticAnalysis_AnalyseExpression(analysis, expr->node.binary.left);
         if (!left)
@@ -58,16 +66,19 @@ Type *SemanticAnalysis_AnalyseExpression(SemanticAnalysis *analysis, Node *expr)
         if (!right)
             return NULL;
 
-        if (!Type_Compare(left, right)) {
-            SEMANTIC_PRINT("Cannot perform binary operation on conflicting types \"%s\" and \"%s\".\n", Type_Identifier(left),
-                           Type_Identifier(right));
-            return NULL;
-        }
-
-        if (left->type == TYPE_VOID) {
+        if (left->type == TYPE_VOID || right->type == TYPE_VOID) {
             SEMANTIC_PRINT("Cannot perform binary operation on void types.\n");
             return NULL;
         }
+
+        if (!Type_Compare(left, right)) {
+            Type *new = Type_Larger(left, right);
+            SEMANTIC_PRINT("Cannot perform binary operation on conflicting types \"%s\" and \"%s\". Performing type cast to '%s'\n", Type_Identifier(left),
+                           Type_Identifier(right), Type_Identifier(new));
+            return new;
+        }
+
+        return left;
     }
     if (expr->type == NODE_INTEGER_LITERAL) {
         PrimitiveType fitting = PrimitiveType_FitInteger(expr->node.int_lit.n);
@@ -75,7 +86,7 @@ Type *SemanticAnalysis_AnalyseExpression(SemanticAnalysis *analysis, Node *expr)
             SEMANTIC_PRINT("Integer automatic classification failed. Maybe try explicit typing?\n");
             return NULL;
         }
-        Token *tok = Token_Create(strdup(PrimitiveType_String(fitting)), TT_IDEN);
+        Token *tok = Token_Create((char *) PrimitiveType_String(fitting), TT_IDEN);
         Type *t = SemanticAnalysis_FindType(analysis, tok);
         SEMANTIC_PRINT("Classified integer %d (%s)\n", expr->node.int_lit.n, tok->value);
         Token_Destroy(tok);
@@ -90,12 +101,21 @@ Status SemanticAnalysis_AnalyseNode(SemanticAnalysis *analysis, Node *n) {
         return STATUS_FAIL;
     }
 
-    if (n->type == NODE_BLOCK)
-        for (unsigned i = 0; i < n->node.block.nodes->length; i++)
-            SemanticAnalysis_AnalyseNode(analysis, Array_At(n->node.block.nodes, i));
+    if (n->type == NODE_BLOCK) {
+        Status stat = STATUS_OK;
+        for (unsigned i = 0; i < n->node.block.nodes->length; i++) {
+            if (SemanticAnalysis_AnalyseNode(analysis, Array_At(n->node.block.nodes, i)) == STATUS_FAIL) {
+                stat = STATUS_FAIL;
+                break;
+            }
+        }
+        return stat;
+    }
 
-    if (n->type == NODE_BINARY_EXPRESSION || n->type == NODE_VARIABLE_REFERENCE || n->type == NODE_FUNCTION_CALL || n->type == NODE_INTEGER_LITERAL || n->type == NODE_FLOAT_LITERAL)
-        return SemanticAnalysis_AnalyseExpression(analysis, n) != NULL;
+    if (n->type == NODE_EXPR_WRAPPER) {
+        Type *t = SemanticAnalysis_AnalyseExpression(analysis, n);
+        return (t == NULL) ? STATUS_FAIL : STATUS_OK;
+    }
 
     return STATUS_OK;
 }

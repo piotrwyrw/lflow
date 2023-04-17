@@ -23,7 +23,7 @@ void Tokenizer_Destroy(Tokenizer *tokenizer) {
 }
 
 #define TOK_ERR(...) \
-        printf("[Deltamide] "); \
+        printf("Deltamide -> "); \
         printf(__VA_ARGS__);
 
 #define LAST_IDX ((tokenizer->ix + 1 > tokenizer->length))
@@ -187,6 +187,7 @@ Status Tokenizer_Next(Tokenizer *tokenizer) {
     BIND_KW("jmp", TT_KW_JMP)
     BIND_KW("return", TT_KW_RETURN)
     BIND_KW("otherwise", TT_KW_OTHERWISE)
+    BIND_KW("size", TT_KW_SIZE)
 
 #undef BIND_KW
 

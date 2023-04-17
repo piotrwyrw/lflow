@@ -50,6 +50,7 @@ const char *TokenType_String(TokenType type) {
         AUTO_CASE(TT_KW_JMP)
         AUTO_CASE(TT_KW_OTHERWISE)
         AUTO_CASE(TT_KW_RETURN)
+        AUTO_CASE(TT_KW_SIZE)
 
         default:
             return "(Unknown type)";

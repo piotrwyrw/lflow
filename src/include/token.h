@@ -47,7 +47,8 @@ typedef enum {
     TT_KW_CONSTANT,      // const
     TT_KW_JMP,
     TT_KW_RETURN,
-    TT_KW_OTHERWISE
+    TT_KW_OTHERWISE,
+    TT_KW_SIZE
 
 } TokenType;
 
