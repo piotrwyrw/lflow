@@ -142,6 +142,7 @@ Status SemanticAnalysis_AnalyseVariableDeclaration(SemanticAnalysis *analysis, N
                            n->node.var_decl.type->content.placeholder.id->value, n->node.var_decl.id->value);
             return STATUS_FAIL;
         }
+        Type_Destroy(n->node.var_decl.type);
         n->node.var_decl.type = resv;
     }
 
