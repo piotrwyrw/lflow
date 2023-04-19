@@ -163,6 +163,7 @@ Node *Node_CreateFunctionCall(Token *id, Array *xprs, Node *super) {
 Node *Node_CreateVariableReference(Token *id, Node *super) {
     Node *n = Node_CreateBase(NODE_VARIABLE_REFERENCE, super);
     n->node.var_ref.id = Token_Dup(id);
+    n->node.var_ref.next = NULL;
     return n;
 }
 
@@ -171,7 +172,7 @@ Node *Node_CreateBlock(Array *arr, Node *super) {
     n->node.block.nodes = arr;
     n->node.block.sub = NULL;
     n->node.block.super = NULL;
-    n->node.block.declarations = NULL;
+    n->node.block.declarations = Array_Create();
     return n;
 }
 
@@ -253,7 +254,7 @@ void Node_DestroyRecurse(Node *node) {
         case NODE_BLOCK:
             Array_DestroyCallBack(node->node.block.nodes, (void *) Node_DestroyRecurse);
 
-            Array_DestroyCallBack(node->node.block.declarations, (void *) Node_DestroyRecurse);
+            Array_Destroy(node->node.block.declarations);
             Node_DestroyRecurse(node->node.block.sub);
             Node_DestroyRecurse(node->node.block.super);
 
@@ -389,10 +390,12 @@ void Node_Print(unsigned depth, Node *node) {
         OUTPUT("Variable reference\n");
             depth++;
             OUTPUT("Identifier: %s\n", node->node.var_ref.id->value);
-            OUTPUT("Next\n");
-            depth ++;
-            
-            depth --;
+            if (node->node.var_ref.next) {
+                OUTPUT("Next\n");
+                depth++;
+                Node_Print(depth, node->node.var_ref.next);
+                depth--;
+            }
             depth--;
             break;
         case NODE_BLOCK:
@@ -464,6 +467,37 @@ void Node_Print(unsigned depth, Node *node) {
         OUTPUT("(Undefined Node)\n");
             break;
     }
+}
+
+// Find an element (variable declaration, function def., complex type, ...)
+// in the scope hierarchy
+Element Block_FindElement(Node *blk, Token *id) {
+    if (!blk)
+        return (Element) {.n = NULL};
+
+    Array *arr = blk->node.block.declarations;
+
+    if (!arr)
+        return (Element) {.n = NULL};
+
+    // Look in current scope
+    for (unsigned i = 0; i < arr->length; i ++) {
+        Node *n = Array_At(arr, i);
+        if (!n)
+            continue;
+        if (n->type == NODE_VARIABLE_DECLARATION)
+            if (Token_Cmp(n->node.var_decl.id, id))
+                return (Element) {.type = ELEMENT_VARIABLE, .n = n};
+        if (n->type == NODE_FUNCTION_DEFINITION)
+            if (Token_Cmp(n->node.func_def.id, id))
+                return (Element) {.type = ELEMENT_FUNCTION, .n = n};
+    }
+
+    // Look in higher-order scopes
+    if (blk->node.block.super != NULL)
+        return Block_FindElement(blk->node.block.super, id);
+
+    return (Element) {.n = NULL};
 }
 
 #undef OUTPUT

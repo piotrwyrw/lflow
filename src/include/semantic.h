@@ -19,6 +19,8 @@ typedef struct {
     Node *currentBlock;
 } SemanticAnalysis;
 
+Type *SemanticAnalysis_ResolveType(SemanticAnalysis *, Type *, Node *);
+
 SemanticAnalysis *SemanticAnalysis_Create(Node *);
 void SemanticAnalysis_Destroy(SemanticAnalysis *);
 

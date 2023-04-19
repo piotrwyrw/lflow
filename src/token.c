@@ -106,3 +106,9 @@ TokenType TokenType_Leading(char c) {
 Token *Token_Dup(Token *token) {
     return Token_Create(token->value, token->type);
 }
+
+bool Token_Cmp(Token *a, Token *b) {
+    if (!a || !b)
+        return false;
+    return strcmp(a->value, b->value) == 0;
+}

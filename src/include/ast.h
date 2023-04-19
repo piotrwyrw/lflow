@@ -152,6 +152,17 @@ struct Node {
     } node;
 };
 
+typedef enum {
+    ELEMENT_VARIABLE,
+    ELEMENT_FUNCTION,
+    ELEMENT_COMPLEX
+} ElementType;
+
+typedef struct {
+    ElementType type;
+    Node *n;
+} Element;
+
 Node *Node_CreateBase(NodeType, Node *);
 
 void Node_DestroyBase(Node *);
@@ -183,6 +194,8 @@ Node *Node_CreateReturn(Node *, Node *);
 Node *Node_CreateCheck(Node *, Node *, Node *, Node *);
 
 Node *Node_CreateSize(Type *, Node *);
+
+Element Block_FindElement(Node *, Token *);
 
 void Node_DestroyRecurse(Node *);
 

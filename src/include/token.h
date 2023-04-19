@@ -1,6 +1,8 @@
 #ifndef LFLOW_TOKEN_H
 #define LFLOW_TOKEN_H
 
+#include "bool.h"
+
 typedef enum {
     // Core types
     TT_UNKNOWN,
@@ -63,6 +65,7 @@ typedef struct {
 
 Token *Token_Create(char *, TokenType);
 void Token_Destroy(Token *);
+bool Token_Cmp(Token *, Token *);
 
 Token *Token_Dup(Token *);
 
