@@ -23,7 +23,6 @@ const char *NodeType_ToString(NodeType type) {
         CASE(NODE_BLOCK);
         CASE(NODE_VARIABLE_REFERENCE);
         CASE(NODE_BINARY_EXPRESSION);
-        CASE(NODE_EXPR_WRAPPER);
 
         default:
             return "(Unknown Node Type)";
@@ -199,14 +198,6 @@ Node *Node_CreateCheck(Node *expr, Node *block, Node *sub, Node *super) {
     return n;
 }
 
-Node *Node_CreateExpressionWrapper(Node *expr, bool defined, Type *t, Node *super) {
-    Node *n = Node_CreateBase(NODE_EXPR_WRAPPER, super);
-    n->node.expr_wrap.expr = expr;
-    n->node.expr_wrap.defined = defined;
-    n->node.expr_wrap.type = t;
-    return n;
-}
-
 Node *Node_CreateSize(Type *type, Node *super) {
     Node *n = Node_CreateBase(NODE_SIZE, super);
     n->node.size.type = type;
@@ -285,10 +276,6 @@ void Node_DestroyRecurse(Node *node) {
             Node_DestroyRecurse(node->node.check.expr);
             Node_DestroyRecurse(node->node.check.block);
             Node_DestroyRecurse(node->node.check.sub);
-            break;
-
-        case NODE_EXPR_WRAPPER:
-            Node_DestroyRecurse(node->node.expr_wrap.expr);
             break;
 
         case NODE_SIZE:
@@ -469,18 +456,12 @@ void Node_Print(unsigned depth, Node *node) {
                 depth--;
             }
             break;
-        case NODE_EXPR_WRAPPER:
-            OUTPUT("Expression wrapper\n");
-            depth ++;
-            OUTPUT("Target type: %s\n", Type_Identifier(node->node.expr_wrap.type));
-            Node_Print(depth, node->node.expr_wrap.expr);
-            depth --;
-            break;
         case NODE_SIZE:
+            break;
             OUTPUT("Size: %s\n", Type_Identifier(node->node.size.type));
             break;
         default:
-        OUTPUT("\\(Undefined Node\\)\n");
+        OUTPUT("(Undefined Node)\n");
             break;
     }
 }

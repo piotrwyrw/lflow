@@ -43,20 +43,6 @@ PrimitiveType PrimitiveType_FitInteger(int n) {
 Status SemanticAnalysis_AnalyseNode(SemanticAnalysis *, Node *);
 
 Type *SemanticAnalysis_AnalyseExpression(SemanticAnalysis *analysis, Node *expr) {
-    if (expr->type == NODE_EXPR_WRAPPER) {
-        Type *t = SemanticAnalysis_AnalyseExpression(analysis, expr->node.expr_wrap.expr);
-        if (!t)
-            return NULL;
-        if (expr->node.expr_wrap.defined) {
-            if (Type_Compare(t, expr->node.expr_wrap.type)) {
-                SEMANTIC_PRINT("The binary expression is expected to output '%s', yet it yields a '%s'.\n",
-                               Type_Identifier(expr->node.expr_wrap.type),
-                               Type_Identifier(t));
-                return NULL;
-            }
-        }
-        return t;
-    }
     if (expr->type == NODE_BINARY_EXPRESSION) {
         Type *left = SemanticAnalysis_AnalyseExpression(analysis, expr->node.binary.left);
         if (!left)
@@ -110,11 +96,6 @@ Status SemanticAnalysis_AnalyseNode(SemanticAnalysis *analysis, Node *n) {
             }
         }
         return stat;
-    }
-
-    if (n->type == NODE_EXPR_WRAPPER) {
-        Type *t = SemanticAnalysis_AnalyseExpression(analysis, n);
-        return (t == NULL) ? STATUS_FAIL : STATUS_OK;
     }
 
     return STATUS_OK;

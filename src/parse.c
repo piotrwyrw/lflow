@@ -104,7 +104,7 @@ Node *Parser_ParseNext(Parser *parser) {
     }
 
     Parser_Consume(parser); // Skip ';'
-    return Node_CreateExpressionWrapper(n, false, NULL, parser->lastBlock);
+    return n;
 }
 
 Node *Parser_ParseStringLiteral(Parser *parser) {
@@ -180,7 +180,7 @@ Node *Parser_ParseVariableAssignment(Parser *parser) {
 
     Parser_Consume(parser); // Skip ';'
 
-    Node *n = Node_CreateVariableAssignment(id, Node_CreateExpressionWrapper(expr, false, NULL, parser->lastBlock), parser->lastBlock);
+    Node *n = Node_CreateVariableAssignment(id, expr, parser->lastBlock);
     Token_Destroy(id);
     return n;
 }
@@ -341,7 +341,7 @@ Node *Parser_ParseVariableDeclaration(Parser *parser) {
 
     Parser_Consume(parser); // Skip ';'
 
-    Node *n = Node_CreateVariableDeclaration(id, Node_CreateExpressionWrapper(expr, true, Type_CreatePlaceholder(type), parser->lastBlock), type, modQua, parser->lastBlock);
+    Node *n = Node_CreateVariableDeclaration(id, expr, type, modQua, parser->lastBlock);
 
     Token_Destroy(id);
     Token_Destroy(type);
@@ -677,7 +677,7 @@ Node *Parser_ParseReturn(Parser *parser) {
 
     Parser_Consume(parser); // Skip ';'
 
-    return Node_CreateReturn(Node_CreateExpressionWrapper(expr, false, NULL, parser->lastBlock), parser->lastBlock);
+    return Node_CreateReturn(expr, parser->lastBlock);
 }
 
 Node *Parser_ParseCheck(Parser *parser) {
@@ -706,7 +706,7 @@ Node *Parser_ParseCheck(Parser *parser) {
         return NULL;
     }
 
-    Node *check = Node_CreateCheck(Node_CreateExpressionWrapper(chk, false, NULL, parser->lastBlock), blk, NULL, parser->lastBlock);
+    Node *check = Node_CreateCheck(chk, blk, NULL, parser->lastBlock);
     Node *root = check;
 
     bool flag = true; // false - The final 'otherwise' had already been commited
@@ -771,7 +771,7 @@ Node *Parser_ParseCheck(Parser *parser) {
         }
 
         // Create the sub-check
-        Node *subchk = Node_CreateCheck(Node_CreateExpressionWrapper(expr, false, NULL, parser->lastBlock), otherwise_blk, NULL, parser->lastBlock);
+        Node *subchk = Node_CreateCheck(expr, otherwise_blk, NULL, parser->lastBlock);
         check->node.check.sub = subchk;
         check = subchk;
     }

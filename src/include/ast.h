@@ -20,7 +20,6 @@ typedef enum {
     NODE_FUNCTION_DEFINITION,
     NODE_RETURN,
     NODE_CHECK,
-    NODE_EXPR_WRAPPER,
     NODE_SIZE
 } NodeType;
 
@@ -145,13 +144,6 @@ struct Node {
             Node *sub;
         } check;
 
-        // Expression wrapper
-        struct {
-            Node *expr;
-            bool defined;
-            Type *type;
-        } expr_wrap;
-
         // Size directive
         struct {
             Type *type;
@@ -189,8 +181,6 @@ Node *Node_CreateFunctionDefinition(Token *, Token *, Array *, Node *, Node *);
 Node *Node_CreateReturn(Node *, Node *);
 
 Node *Node_CreateCheck(Node *, Node *, Node *, Node *);
-
-Node *Node_CreateExpressionWrapper(Node *, bool, Type *, Node *);
 
 Node *Node_CreateSize(Type *, Node *);
 
