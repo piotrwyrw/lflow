@@ -35,6 +35,7 @@ const char *TokenType_String(TokenType type) {
         AUTO_CASE(TT_LGREATER)
         AUTO_CASE(TT_RGREATER)
         AUTO_CASE(TT_COMMA)
+        AUTO_CASE(TT_DOLLAR_SIGN)
 
         AUTO_CASE(TT_POINT_RIGHT)
         AUTO_CASE(TT_POINT_LEFT)
@@ -51,6 +52,7 @@ const char *TokenType_String(TokenType type) {
         AUTO_CASE(TT_KW_OTHERWISE)
         AUTO_CASE(TT_KW_RETURN)
         AUTO_CASE(TT_KW_SIZE)
+        AUTO_CASE(TT_KW_EXTERN)
 
         default:
             return "(Unknown type)";
@@ -96,6 +98,7 @@ TokenType TokenType_Leading(char c) {
         BIND('>', TT_LGREATER)
         BIND('<', TT_RGREATER)
         BIND(',', TT_COMMA)
+        BIND('$', TT_DOLLAR_SIGN)
         default:
             return TT_UNKNOWN;
     }

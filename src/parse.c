@@ -60,7 +60,6 @@ Node *Parser_ParseProgram(Parser *parser) {
         Node *n = Parser_ParseNext(parser);
 
         if (n == NULL) {
-            Array_DestroyCallBack(arr, (void *) Node_DestroyRecurse);
             Node_DestroyRecurse(blk);
             return NULL;
         }

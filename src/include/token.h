@@ -33,6 +33,7 @@ typedef enum {
     TT_LGREATER,        // >
     TT_RGREATER,        // <
     TT_COMMA,           // ,
+    TT_DOLLAR_SIGN,      // $
 
     // Complex tokens
     TT_POINT_RIGHT,     // ->
@@ -50,7 +51,8 @@ typedef enum {
     TT_KW_JMP,
     TT_KW_RETURN,
     TT_KW_OTHERWISE,
-    TT_KW_SIZE
+    TT_KW_SIZE,
+    TT_KW_EXTERN
 
 } TokenType;
 

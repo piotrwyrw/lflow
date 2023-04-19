@@ -22,3 +22,4 @@ cmake .
 make
 
 echo "Done."
+

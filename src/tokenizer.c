@@ -188,6 +188,7 @@ Status Tokenizer_Next(Tokenizer *tokenizer) {
     BIND_KW("return", TT_KW_RETURN)
     BIND_KW("otherwise", TT_KW_OTHERWISE)
     BIND_KW("size", TT_KW_SIZE)
+    BIND_KW("extern", TT_KW_EXTERN)
 
 #undef BIND_KW
 

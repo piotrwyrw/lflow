@@ -23,6 +23,8 @@ const char *NodeType_ToString(NodeType type) {
         CASE(NODE_BLOCK);
         CASE(NODE_VARIABLE_REFERENCE);
         CASE(NODE_BINARY_EXPRESSION);
+        CASE(NODE_EXTERNAL_REFERENCE)
+        CASE(NODE_SIZE)
 
         default:
             return "(Unknown Node Type)";
@@ -38,8 +40,8 @@ const char *BinaryType_ToString(BinaryType type) {
         CASE(BIN_OR);
         CASE(BIN_AND);
         CASE(BIN_EQUAL);
-        CASE(BIN_LGREATER);
-        CASE(BIN_RGREATER);
+        CASE(BIN_LGREATER)
+        CASE(BIN_RGREATER)
 
         default:
             return "*Unknown Binary Type)";
@@ -205,6 +207,12 @@ Node *Node_CreateSize(Type *type, Node *super) {
     return n;
 }
 
+Node *Node_CreateExternalReference(Token *id, Node *super) {
+    Node *n = Node_CreateBase(NODE_EXTERNAL_REFERENCE, super);
+    n->node.ext_ref.id = Token_Dup(id);
+    return n;
+}
+
 #define CANFREE(t) (t->type == TYPE_PLACEHOLDER || t->type == TYPE_VOID)
 
 void Node_DestroyRecurse(Node *node) {
@@ -277,6 +285,10 @@ void Node_DestroyRecurse(Node *node) {
             Node_DestroyRecurse(node->node.check.expr);
             Node_DestroyRecurse(node->node.check.block);
             Node_DestroyRecurse(node->node.check.sub);
+            break;
+
+        case NODE_EXTERNAL_REFERENCE:
+            Token_Destroy(node->node.ext_ref.id);
             break;
 
         case NODE_SIZE:
@@ -481,7 +493,7 @@ Element Block_FindElement(Node *blk, Token *id) {
         return (Element) {.n = NULL};
 
     // Look in current scope
-    for (unsigned i = 0; i < arr->length; i ++) {
+    for (unsigned i = 0; i < arr->length; i++) {
         Node *n = Array_At(arr, i);
         if (!n)
             continue;
