@@ -472,8 +472,10 @@ void Node_Print(unsigned depth, Node *node) {
             }
             break;
         case NODE_SIZE:
-            break;
             OUTPUT("Size: %s\n", Type_Identifier(node->node.size.type));
+            break;
+        case NODE_EXTERNAL_REFERENCE:
+            OUTPUT("External reference: %s\n", node->node.ext_ref.id->value);
             break;
         default:
         OUTPUT("(Undefined Node)\n");

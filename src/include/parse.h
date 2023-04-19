@@ -55,6 +55,7 @@ Node *Parser_ParseBlock(Parser *);
 Node *Parser_ParseFunctionDefinition(Parser *);
 Node *Parser_ParseReturn(Parser *);
 Node *Parser_ParseCheck(Parser *);
+Node *Parser_ParseExternalReference(Parser *);
 Node *Parser_ParseSize(Parser *);
 
 #endif

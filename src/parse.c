@@ -90,6 +90,9 @@ Node *Parser_ParseNext(Parser *parser) {
     if (Parser_Compare(parser, CURRENT, TT_KW_CHECK, NULL))
         return Parser_ParseCheck(parser);
 
+    if (Parser_Compare(parser, CURRENT, TT_DOLLAR_SIGN, NULL))
+        return Parser_ParseExternalReference(parser);
+
     // Last resort
     Node *n = Parser_ParseExpression(parser);
 
@@ -780,7 +783,8 @@ Node *Parser_ParseCheck(Parser *parser) {
 
 Node *Parser_ParseSize(Parser *parser) {
     if (!Parser_Compare(parser, CURRENT, TT_KW_SIZE, NULL)) {
-        SYNTAX_ERR("Expected 'size' keyword at the beginning of a size directive, got %s.\n", TokenType_String(parser->current->type));
+        SYNTAX_ERR("Expected 'size' keyword at the beginning of a size directive, got %s.\n",
+                   TokenType_String(parser->current->type));
         return NULL;
     }
 
@@ -803,11 +807,41 @@ Node *Parser_ParseSize(Parser *parser) {
     Parser_Consume(parser);
 
     if (!Parser_Compare(parser, CURRENT, TT_RSBRACKET, NULL)) {
-        SYNTAX_ERR("Expected ']' after type identifier '%s', got %s.\n", Type_Identifier(t), TokenType_String(parser->current->type));
+        SYNTAX_ERR("Expected ']' after type identifier '%s', got %s.\n", Type_Identifier(t),
+                   TokenType_String(parser->current->type));
         return NULL;
     }
 
     Parser_Consume(parser);
 
     return Node_CreateSize(t, parser->lastBlock);
+}
+
+Node *Parser_ParseExternalReference(Parser *parser) {
+    if (!Parser_Compare(parser, CURRENT, TT_DOLLAR_SIGN, NULL)) {
+        SYNTAX_ERR("Expected '$' at the beginning of an extern statement, got %s.\n",
+                   TokenType_String(parser->current->type));
+        return NULL;
+    }
+
+    Parser_Consume(parser);
+
+    if (!Parser_Compare(parser, CURRENT, TT_KW_EXTERN, NULL)) {
+        SYNTAX_ERR("Expected 'extern' keyword after '$', got %s.\n", TokenType_String(parser->current->type));
+        return NULL;
+    }
+
+    Parser_Consume(parser);
+
+    if (!Parser_Compare(parser, CURRENT, TT_IDEN, NULL)) {
+        SYNTAX_ERR("Expected function identifier after 'extern' keyword, got %s.\n",
+                   TokenType_String(parser->current->type));
+        return NULL;
+    }
+
+    Node *n = Node_CreateExternalReference(parser->current, parser->lastBlock);
+
+    Parser_Consume(parser); // Skip identifier
+
+    return n;
 }
